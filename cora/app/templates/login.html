@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · Cora</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .login-wrap { width:100%; max-width:400px; }
+    .login-card { background:#fff; border-radius:26px; padding:30px 26px; box-shadow:0 30px 60px rgba(0,0,0,.3); }
+    .brand-row { display:flex; align-items:center; gap:10px; color:#fff; justify-content:center; margin-bottom:22px; font-weight:800; font-size:22px; }
+    .brand-row .heart { width:40px; height:40px; border-radius:13px; background:linear-gradient(135deg,#ff3d71,#ff7a59); display:grid; place-items:center; }
+    .login-card h1 { font-size:20px; margin:0 0 4px; }
+    .login-card p.sub { color:var(--muted); font-size:13px; margin:0 0 18px; }
+    .erro { background:#ffe9eb; color:#e11d48; padding:10px 14px; border-radius:12px; font-size:13px; margin-bottom:14px; }
+    .demo { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+    .demo p { font-size:12px; color:var(--muted); margin:0 0 10px; text-align:center; }
+    .demo .row { display:flex; gap:8px; }
+    .demo .row a { flex:1; text-align:center; font-size:12.5px; font-weight:700; padding:10px 6px; border-radius:12px; background:var(--surface-2); color:var(--grape); }
+  </style>
+</head>
+<body class="appbg" style="place-items:center">
+  <div class="login-wrap">
+    <div class="brand-row"><span class="heart">♥</span> Cora</div>
+    <div class="login-card">
+      <h1>Bem-vindo de volta 💜</h1>
+      <p class="sub">Entre para acompanhar a escola de quem você ama.</p>
+
+      {% if erro %}<div class="erro">E-mail ou senha incorretos. Tente novamente.</div>{% endif %}
+
+      <form action="/login" method="post">
+        <label>E-mail</label>
+        <input name="email" type="email" placeholder="voce@email.com" required>
+        <label>Senha</label>
+        <input name="senha" type="password" placeholder="••••••••" required>
+        <button class="cta" style="margin-top:18px">Entrar</button>
+      </form>
+
+      <div class="demo">
+        <p>Acesso rápido para demonstração (senha: <b>cora123</b>)</p>
+        <div class="row">
+          <a href="/login/demo/familia">👨‍👩‍👧 Família</a>
+          <a href="/login/demo/professor">👩‍🏫 Professor</a>
+          <a href="/login/demo/coordenacao">🏫 Coordenação</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

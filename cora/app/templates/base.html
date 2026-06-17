@@ -13,6 +13,7 @@
       <a href="/coordenacao" class="{{ 'active' if active=='coord' }}">Coordenação</a>
       <a href="/professor" class="{{ 'active' if active=='prof' }}">Professor</a>
       <a href="/familia" class="{{ 'active' if active=='fam' }}">Família</a>
+      {% if user %}<a href="/logout" style="color:var(--muted)">Sair</a>{% endif %}
     </nav>
   </header>
   <main class="wrap">

@@ -2,8 +2,9 @@
 {% set active = 'prof' %}
 {% block title %}Professor · Cora{% endblock %}
 {% block content %}
-<h2 style="margin:0 0 2px">Olá, Prof. Marina 👋</h2>
+<h2 style="margin:0 0 2px">Olá, {{ user.nome }} 👋</h2>
 <p class="muted small">Componha um comunicado e deixe a IA preparar antes de enviar</p>
+{% if enviado %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">✅ Comunicado enviado e já disponível no feed das famílias!</div>{% endif %}
 
 <div class="grid cols-2" style="margin-top:18px">
   <div class="card">
@@ -53,7 +54,15 @@
       <div class="small"><strong>Tradução automática:</strong></div>
       {% for t in preview.traducoes %}<span class="pill blue" style="margin:4px 4px 0 0">{{ t }}</span>{% endfor %}
 
-      <div style="margin-top:16px"><button class="btn block">Enviar comunicado</button></div>
+      <form action="/professor/enviar" method="post" style="margin-top:16px">
+        <input type="hidden" name="titulo" value="{{ preview.titulo }}">
+        <input type="hidden" name="corpo" value="{{ preview.corpo }}">
+        <input type="hidden" name="turma" value="{{ preview.turma }}">
+        <label class="small" style="display:flex;align-items:center;gap:8px;font-weight:600">
+          <input type="checkbox" name="precisa_confirmar" value="true" style="width:auto"> Pedir confirmação de leitura
+        </label>
+        <button class="btn block" type="submit" style="margin-top:10px">Enviar comunicado</button>
+      </form>
     {% endif %}
   </div>
 </div>

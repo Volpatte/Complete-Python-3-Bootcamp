@@ -20,8 +20,27 @@ cd cora
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
-# abra http://127.0.0.1:8000
+# abra http://127.0.0.1:8000  → faça login
 ```
+
+### Banco de dados e login
+
+O app já tem **persistência (SQLAlchemy)** e **autenticação por sessão com papéis**.
+Por padrão usa **SQLite** (`cora.db`, criado e populado automaticamente). Para
+Postgres em produção, basta definir `DATABASE_URL`:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://user:pass@host:5432/cora
+export CORA_SECRET_KEY=$(openssl rand -hex 32)
+```
+
+Usuários de demonstração (senha **`cora123`**), ou use os botões de acesso rápido na tela de login:
+
+| Papel | E-mail |
+|---|---|
+| Coordenação | `coord@cora.app` |
+| Professor | `prof@cora.app` |
+| Família | `familia@cora.app` |
 
 ## Telas (perfis navegáveis)
 
