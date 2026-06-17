@@ -1,4 +1,4 @@
-"""Dados de exemplo (seed) do protótipo Elo Escolar.
+"""Dados de exemplo (seed) do protótipo Cora.
 
 Tudo em memória — é um protótipo navegável, não um banco de dados.
 A modelagem aqui já antecipa as tabelas reais do MVP (escola, turma,

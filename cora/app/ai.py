@@ -1,4 +1,4 @@
-"""Camada de IA do Elo Escolar — o principal diferencial.
+"""Camada de IA do Cora — o principal diferencial.
 
 No protótipo, as funções rodam com heurísticas locais (sem chave de API,
 sem rede) para que a navegação funcione em qualquer ambiente. Cada função

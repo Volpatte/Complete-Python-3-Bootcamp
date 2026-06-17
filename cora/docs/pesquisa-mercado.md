@@ -1,6 +1,6 @@
 # Pesquisa de mercado — comunicação escola-família no Brasil
 
-> Insumo para priorização de roadmap do **Elo Escolar**.
+> Insumo para priorização de roadmap do **Cora**.
 > Pesquisa multi-fonte (jun/2026). Confiança indicada por afirmação.
 > Premissas iniciais corrigidas estão sinalizadas com ⚠️.
 

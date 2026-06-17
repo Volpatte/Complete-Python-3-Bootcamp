@@ -1,0 +1,1 @@
+"""Pacote do protótipo Cora."""

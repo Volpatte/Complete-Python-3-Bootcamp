@@ -1,24 +1,25 @@
 /* ============================================================
-   Elo Escolar — tema PREMIUM mobile-first (vibe Nubank + social)
+   Cora — tema PREMIUM mobile-first (vibe Nubank + social)
    App da Família. Telas de gestão (coord/prof) usam style.css.
    ============================================================ */
 
 :root {
-  --grape: #7b2ff7;
-  --grape-2: #5b21d6;
-  --indigo: #4f46e5;
-  --ink: #14112b;
+  /* Cora — paleta quente/humana (coral + rosa, com pôr-do-sol) */
+  --grape: #ff3d71;     /* coral-rosa, o "coração" da marca */
+  --grape-2: #d6336c;   /* rosa profundo */
+  --indigo: #ff7a59;    /* coral-laranja p/ gradiente sunset */
+  --ink: #2b1622;
   --surface: #ffffff;
-  --surface-2: #f6f4fd;
-  --muted: #6b6886;
-  --line: #ece9f7;
-  --lime: #c4f042;
-  --cyan: #22d3ee;
+  --surface-2: #fff4f5;
+  --muted: #927982;
+  --line: #ffe1e6;
+  --lime: #ffd166;      /* dourado quente (acento) */
+  --cyan: #ff8fab;      /* rosa claro (acento) */
   --amber: #fbbf24;
   --red: #fb5d6a;
   --green: #2bd6a4;
-  --shadow: 0 10px 30px rgba(91, 33, 214, .12);
-  --shadow-sm: 0 4px 16px rgba(20, 17, 43, .07);
+  --shadow: 0 10px 30px rgba(214, 51, 108, .16);
+  --shadow-sm: 0 4px 16px rgba(43, 22, 34, .08);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -28,9 +29,9 @@ body.appbg {
   font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 600px at 10% -10%, #6d28d9 0%, transparent 50%),
-    radial-gradient(1000px 700px at 110% 10%, #4338ca 0%, transparent 45%),
-    linear-gradient(160deg, #2a1065, #120a2e 60%);
+    radial-gradient(1200px 600px at 10% -10%, #ff5d8f 0%, transparent 50%),
+    radial-gradient(1000px 700px at 110% 10%, #ff7a59 0%, transparent 45%),
+    linear-gradient(160deg, #4a0f2e, #1c0712 60%);
   display: grid;
   place-items: start center;
   padding: 28px 16px 60px;
@@ -135,8 +136,8 @@ body.appbg {
 
 .ai-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  background: linear-gradient(135deg, #f3e8ff, #e9e2ff);
-  color: #6d28d9; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+  background: linear-gradient(135deg, #ffe3ea, #ffd9e0);
+  color: #d6336c; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px;
 }
 .ai-summary {
   background: var(--surface-2); border-radius: 14px; padding: 11px 13px; margin: 10px 0;

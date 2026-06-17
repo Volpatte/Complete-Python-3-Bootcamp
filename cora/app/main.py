@@ -1,4 +1,4 @@
-"""Elo Escolar — protótipo navegável (FastAPI + Jinja2).
+"""Cora — protótipo navegável (FastAPI + Jinja2).
 
 Rodar:
     pip install -r requirements.txt
@@ -21,7 +21,7 @@ from . import ai, data
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Elo Escolar", description="Plataforma de relação escola-família")
+app = FastAPI(title="Cora", description="Plataforma de relação escola-família")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
@@ -176,4 +176,4 @@ def familia_comunicado(request: Request, cid: int):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "produto": "Elo Escolar"}
+    return {"status": "ok", "produto": "Cora"}
