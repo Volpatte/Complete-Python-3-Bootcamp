@@ -13,11 +13,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
-from . import ai, data
+from . import ai, assistant, data
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -152,6 +153,26 @@ def familia_agenda(request: Request):
         "agenda.html",
         _ctx(request, responsavel=data.RESPONSAVEL, eventos=data.EVENTOS),
     )
+
+
+@app.get("/familia/assistente", response_class=HTMLResponse)
+def familia_assistente(request: Request):
+    """Chat com o Assistente Cora (IA conversacional para a família)."""
+    saudacao = assistant.responder("")  # mensagem de boas-vindas + sugestões
+    return templates.TemplateResponse(
+        "assistente.html",
+        _ctx(request, responsavel=data.RESPONSAVEL, saudacao=saudacao),
+    )
+
+
+class Pergunta(BaseModel):
+    mensagem: str = ""
+
+
+@app.post("/api/assistente")
+def api_assistente(p: Pergunta):
+    """Endpoint JSON consumido pelo chat. No MVP, chama a Claude API (tool use)."""
+    return JSONResponse(assistant.responder(p.mensagem))
 
 
 @app.get("/familia/comunicado/{cid}", response_class=HTMLResponse)

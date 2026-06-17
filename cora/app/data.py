@@ -222,3 +222,30 @@ INTEGRACOES = [
     {"nome": "Pix / Gateway de pagamento", "categoria": "Financeiro", "status": "conectado"},
     {"nome": "Microsoft Teams for Education", "categoria": "LMS", "status": "disponível"},
 ]
+
+
+# --------------------------------------------------------------------------- #
+# Dados que o Assistente Cora consulta (no MVP, vêm do ERP via integração)
+# --------------------------------------------------------------------------- #
+FREQUENCIA = {
+    "faltas": 2,
+    "presenca_pct": 96,
+    "ultima_falta": HOJE - timedelta(days=12),
+    "dias_letivos": 98,
+}
+
+CARDAPIO_HOJE = {
+    "principal": "Arroz, feijão, frango grelhado e legumes no vapor",
+    "salada": "Alface, tomate e cenoura",
+    "sobremesa": "Fruta da estação (banana)",
+    "lanche": "Pão integral com queijo e suco natural de laranja",
+}
+
+FINANCEIRO = {
+    "mes": "junho",
+    "valor": "R$ 1.480,00",
+    "vencimento": HOJE + timedelta(days=3),
+    "status": "em aberto",
+    "aceita_pix": True,
+}
+

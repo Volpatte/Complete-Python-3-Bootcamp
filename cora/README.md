@@ -29,6 +29,7 @@ uvicorn app.main:app --reload
 - `/coordenacao` — analytics, insight de IA, radar de risco, integrações
 - `/professor` — compor comunicado e ver a IA resumir/priorizar/traduzir
 - `/familia` — feed inteligente, agenda, tarefas, autorizações, respostas sugeridas
+- `/familia/assistente` — **Assistente Cora**: chat de IA que responde faltas, cardápio, agenda, tarefas e financeiro 24h (API `POST /api/assistente`)
 
 ## Arquitetura
 
