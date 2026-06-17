@@ -139,6 +139,21 @@ def familia(request: Request):
     )
 
 
+@app.get("/familia/mensagens", response_class=HTMLResponse)
+def familia_mensagens(request: Request):
+    return templates.TemplateResponse(
+        "mensagens.html", _ctx(request, responsavel=data.RESPONSAVEL)
+    )
+
+
+@app.get("/familia/agenda", response_class=HTMLResponse)
+def familia_agenda(request: Request):
+    return templates.TemplateResponse(
+        "agenda.html",
+        _ctx(request, responsavel=data.RESPONSAVEL, eventos=data.EVENTOS),
+    )
+
+
 @app.get("/familia/comunicado/{cid}", response_class=HTMLResponse)
 def familia_comunicado(request: Request, cid: int):
     c = data.comunicado_por_id(cid)

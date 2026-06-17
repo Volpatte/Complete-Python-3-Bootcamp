@@ -1,35 +1,34 @@
-{% extends "base.html" %}
-{% set active = 'fam' %}
-{% block title %}{{ c.titulo }} · Elo Escolar{% endblock %}
-{% block content %}
-<a href="/familia" class="small muted">← voltar ao feed</a>
+{% extends "app_shell.html" %}
+{% set tab = 'inicio' %}
+{% block title %}{{ c.titulo }} · Elo{% endblock %}
+{% block screen %}
 
-<div class="card" style="margin-top:12px">
-  <span class="pill" style="background:{{ prioridade.cor }}1a;color:{{ prioridade.cor }}">{{ prioridade.rotulo }}</span>
-  {% if c.precisa_confirmar %}<span class="pill amber">precisa confirmar</span>{% endif %}
-  <h2 style="margin:10px 0 2px">{{ c.titulo }}</h2>
-  <div class="muted small">{{ c.autor }} · {{ c.turma }} · {{ c.enviado_em|data_hora }}</div>
-
-  <div class="ai-box">
-    <div class="head">✨ Resumo &amp; tradução</div>
-    <div>{{ resumo }}</div>
-    <div class="muted small" style="margin-top:8px">🌐 {{ traducao }} · toque para traduzir para outro idioma</div>
+<div class="detail-hero">
+  <a href="/familia" class="back" style="color:#fff;text-decoration:none;font-size:22px">‹ voltar</a>
+  <div style="margin-top:12px">
+    <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">{{ prioridade.rotulo }}</span>
+    {% if c.precisa_confirmar %}<span class="tag" style="background:#fbbf24;color:#3b2c00">precisa confirmar</span>{% endif %}
   </div>
-
-  <p style="white-space:pre-line">{{ c.corpo }}</p>
+  <h1 style="font-size:21px;margin:12px 0 4px;letter-spacing:-.02em">{{ c.titulo }}</h1>
+  <div style="font-size:13px;opacity:.85">{{ c.autor }} · {{ c.turma }} · {{ c.enviado_em|data_hora }}</div>
 </div>
 
-<div class="card" style="margin-top:16px">
-  <div class="head" style="display:flex;align-items:center;gap:8px;font-weight:700;color:#6d28d9">✨ Respostas sugeridas</div>
-  <p class="sub">A IA propõe respostas — você só toca e envia</p>
-  {% for s in sugestoes %}
-    <span class="chip-reply">{{ s }}</span>
-  {% endfor %}
+<div class="detail-body">
+  <span class="ai-chip">✨ Resumo &amp; tradução · Elo IA</span>
+  <div class="ai-summary" style="margin-top:8px">{{ resumo }}</div>
+  <div class="muted" style="font-size:12px;margin:-4px 0 14px">🌐 {{ traducao }} · toque para outro idioma</div>
+
+  <p>{{ c.corpo }}</p>
+
+  <span class="ai-chip" style="margin-top:8px">✨ Respostas sugeridas</span>
+  <div class="smart-replies" style="padding:10px 0">
+    {% for s in sugestoes %}<div class="sr">{{ s }}</div>{% endfor %}
+  </div>
 
   {% if acao %}
-  <div style="margin-top:18px">
-    <button class="btn block">{{ acao }}</button>
-  </div>
+  <button class="cta" style="margin-top:8px">{{ acao }}</button>
   {% endif %}
+  <button class="cta soft" style="margin-top:10px">↗️ Receber este aviso no WhatsApp</button>
 </div>
+
 {% endblock %}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}Elo · Família{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="appbg">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      {% block screen %}{% endblock %}
+    </div>
+    <nav class="tabbar">
+      <a href="/familia" class="{{ 'active' if tab=='inicio' }}"><span class="ti">🏠</span>Início</a>
+      <a href="/familia/mensagens" class="{{ 'active' if tab=='msg' }}"><span class="ti">💬</span>Mensagens</a>
+      <a href="/familia/agenda" class="{{ 'active' if tab=='agenda' }}"><span class="ti">📅</span>Agenda</a>
+      <a href="/" class="{{ 'active' if tab=='mais' }}"><span class="ti">⋯</span>Mais</a>
+    </nav>
+  </div>
+</body>
+</html>

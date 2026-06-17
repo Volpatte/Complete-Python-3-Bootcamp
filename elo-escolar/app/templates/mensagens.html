@@ -1,0 +1,58 @@
+{% extends "app_shell.html" %}
+{% set tab = 'msg' %}
+{% block title %}Elo · Mensagens{% endblock %}
+{% block screen %}
+
+<div class="chat-head">
+  <a href="/familia" class="back">‹</a>
+  <div class="pin" style="width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#7b2ff7,#22d3ee);display:grid;place-items:center;font-size:18px">🍎</div>
+  <div style="flex:1">
+    <div style="font-weight:800">Prof. Marina · 5º Ano A</div>
+    <div style="font-size:12px;opacity:.85">online agora</div>
+  </div>
+  <button class="icon-btn">⋯</button>
+</div>
+
+<div class="bubbles">
+  <div class="bubble them">Oi Juliana! Passando pra avisar que o Pedro foi super bem na atividade de frações hoje 😊
+    <div class="t">14:02</div></div>
+  <div class="bubble them">Só não esqueça que amanhã tem a saída antecipada às 11h30.
+    <div class="t">14:02</div></div>
+  <div class="bubble me">Que ótimo, obrigada por avisar! 💜<div class="t">14:10</div></div>
+  <div class="bubble them">Imagina! Qualquer dúvida estou por aqui.<div class="t">14:11</div></div>
+</div>
+
+<div style="padding:0 16px"><span class="ai-chip">✨ Respostas sugeridas pela Elo IA</span></div>
+<div class="smart-replies">
+  <div class="sr">Combinado, vou buscá-lo às 11h30 👍</div>
+  <div class="sr">Vou precisar da permanência supervisionada</div>
+  <div class="sr">Obrigada, professora!</div>
+</div>
+
+<div style="padding:0 16px 16px;display:flex;gap:10px;align-items:center">
+  <input style="flex:1;border:1px solid #ece9f7;border-radius:16px;padding:13px 16px;font-size:14px;font-family:inherit" placeholder="Mensagem…">
+  <button class="cta" style="width:52px;padding:13px">➤</button>
+</div>
+
+<div class="sec-h pad"><h2>Conversas</h2><a href="#">nova</a></div>
+<div class="pad"><div class="list2">
+  <a class="conv-item" href="/familia/mensagens" style="border:0">
+    <div class="pin" style="background:linear-gradient(135deg,#7b2ff7,#22d3ee)">🍎</div>
+    <div class="body"><div class="n">Prof. Marina <span>agora</span></div><div class="p">Imagina! Qualquer dúvida estou por aqui.</div></div>
+  </a>
+  <a class="conv-item" href="#">
+    <div class="pin" style="background:linear-gradient(135deg,#fb5d6a,#fbbf24)">🏫</div>
+    <div class="body"><div class="n">Coordenação <span>1h</span></div><div class="p">Reunião de pais confirmada para 24/06…</div></div>
+    <span class="unread">2</span>
+  </a>
+  <a class="conv-item" href="#">
+    <div class="pin" style="background:linear-gradient(135deg,#2bd6a4,#22d3ee)">💳</div>
+    <div class="body"><div class="n">Financeiro <span>ontem</span></div><div class="p">Boleto de junho disponível no app.</div></div>
+  </a>
+  <a class="conv-item" href="#">
+    <div class="pin" style="background:#25d366">🤖</div>
+    <div class="body"><div class="n">Assistente Elo (IA) <span>ontem</span></div><div class="p">Posso te ajudar com faltas, cardápio e boletos 24h.</div></div>
+  </a>
+</div></div>
+
+{% endblock %}
