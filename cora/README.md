@@ -23,6 +23,21 @@ uvicorn app.main:app --reload
 # abra http://127.0.0.1:8000  → faça login
 ```
 
+### IA real (Claude API)
+
+A camada de IA (`app/ai.py`, `app/assistant.py`) usa a **Claude API** de verdade
+quando há credencial; sem ela, cai automaticamente nas heurísticas offline — a
+demonstração nunca quebra.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...     # ativa a IA real
+export CORA_MODELO=claude-opus-4-8       # opcional (padrão)
+```
+
+Com a chave ativa: resumo abstrativo dos comunicados, insight analítico para a
+coordenação e o **Assistente Cora** respondendo em linguagem natural, ancorado
+nos dados reais do aluno (faltas, cardápio, agenda, financeiro).
+
 ### Banco de dados e login
 
 O app já tem **persistência (SQLAlchemy)** e **autenticação por sessão com papéis**.

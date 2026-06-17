@@ -29,7 +29,7 @@ dados de exemplo de data.py.
 
 from __future__ import annotations
 
-from . import data
+from . import data, llm
 
 _MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
@@ -42,11 +42,56 @@ def _tem(texto: str, *palavras: str) -> bool:
     return any(p in texto for p in palavras)
 
 
-def responder(mensagem: str) -> dict:
-    """Recebe a pergunta do responsável e devolve a resposta da Cora.
+def _contexto_familia() -> str:
+    """Monta o contexto factual que ancora as respostas da IA (vem do ERP no MVP)."""
+    filho = data.RESPONSAVEL["filho"]
+    f = data.FREQUENCIA
+    c = data.CARDAPIO_HOJE
+    fin = data.FINANCEIRO
+    pend = [x for x in data.TAREFAS if x["status"] == "pendente"]
+    tarefas = "; ".join(f"{x['disciplina']}: {x['titulo']} (até {x['entrega'].strftime('%d/%m')})" for x in pend)
+    eventos = "; ".join(f"{e['data'].strftime('%d/%m')} {e['titulo']}" for e in data.EVENTOS[:3])
+    return (
+        f"Aluno: {filho} ({data.RESPONSAVEL['turma']}).\n"
+        f"Frequência: {f['faltas']} faltas, presença {f['presenca_pct']}% em "
+        f"{f['dias_letivos']} dias; última falta em {_data(f['ultima_falta'])}.\n"
+        f"Cardápio de hoje: almoço {c['principal']}; salada {c['salada']}; "
+        f"lanche {c['lanche']}; sobremesa {c['sobremesa']}.\n"
+        f"Financeiro: mensalidade de {fin['mes']} {fin['valor']}, vence "
+        f"{_data(fin['vencimento'])}, status {fin['status']}, aceita Pix: {fin['aceita_pix']}.\n"
+        f"Tarefas pendentes: {tarefas or 'nenhuma'}.\n"
+        f"Próximos eventos: {eventos or 'nenhum'}."
+    )
 
-    Retorna: {"texto": str, "sugestoes": list[str]}
+
+def responder(mensagem: str) -> dict:
+    """Resposta da Cora para o responsável: {"texto": str, "sugestoes": list[str]}.
+
+    Quando a Claude API está disponível, o texto é gerado por ela (ancorado nos
+    dados reais do aluno); as sugestões de continuação vêm sempre do roteador
+    heurístico. Sem a API, tudo cai no roteador heurístico.
     """
+    base = _responder_heuristico(mensagem)
+    if (mensagem or "").strip() and llm.disponivel():
+        resposta = llm.completar(
+            system=(
+                "Você é a Cora, assistente acolhedora de uma escola, conversando com "
+                "um responsável (mãe/pai) no chat. Responda em português do Brasil, em "
+                "no máximo 3 frases, com tom caloroso e prático. Use SOMENTE os dados "
+                "abaixo; se a resposta não estiver neles, diga gentilmente que vai "
+                "encaminhar à secretaria. Nunca invente notas, faltas ou valores.\n\n"
+                + _contexto_familia()
+            ),
+            user=mensagem,
+            max_tokens=300,
+        )
+        if resposta:
+            base = {"texto": resposta, "sugestoes": base["sugestoes"]}
+    return base
+
+
+def _responder_heuristico(mensagem: str) -> dict:
+    """Roteador de intenções offline (sem rede). Base de sugestões e fallback."""
     t = (mensagem or "").lower().strip()
     filho = data.RESPONSAVEL["filho"].split(" ")[0]
 

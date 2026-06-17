@@ -29,16 +29,32 @@ from __future__ import annotations
 
 import re
 
+from . import llm
+
 # Palavras que elevam a prioridade de um comunicado.
 _URGENTE = ("urgente", "emergência", "emergencial", "imediat", "antecipad", "cancelad", "acidente")
 _ALTA = ("prova", "reunião", "reuniao", "vencimento", "boleto", "mensalidade", "autoriza", "saída", "saida")
 
 
 def resumir(texto: str, max_frases: int = 1) -> str:
-    """Resumo extrativo simples: pega a(s) primeira(s) frase(s) com conteúdo.
+    """Resumo de 1 frase do comunicado para o feed da família.
 
-    No MVP vira uma chamada à Claude API para resumo abstrativo de verdade.
+    Usa a Claude API quando disponível (resumo abstrativo); senão, cai num
+    resumo extrativo simples (primeiras frases com conteúdo).
     """
+    if texto and llm.disponivel():
+        r = llm.completar(
+            system=(
+                "Você é a Cora, assistente de uma escola. Resuma o comunicado a seguir "
+                "para um responsável, em UMA frase curta, clara e acolhedora, em "
+                "português do Brasil. Responda apenas com o resumo, sem aspas nem rótulos."
+            ),
+            user=texto,
+            max_tokens=120,
+        )
+        if r:
+            return r
+
     frases = re.split(r"(?<=[.!?])\s+", texto.strip())
     frases = [f for f in frases if len(f) > 20]
     resumo = " ".join(frases[:max_frases])
@@ -93,10 +109,32 @@ def traduzir_rotulo(idioma_destino: str) -> str:
 def insight_coordenacao(engajamento: list[dict]) -> str:
     """Gera um insight em linguagem natural para a coordenação.
 
-    No MVP, a Claude API recebe os números e devolve a análise + recomendação.
+    Com a Claude API, envia os números e recebe análise + recomendação; sem
+    ela, monta um insight a partir do pior caso.
     """
     pior = min(engajamento, key=lambda t: t["taxa_leitura"])
     media = round(sum(t["taxa_leitura"] for t in engajamento) / len(engajamento))
+
+    if llm.disponivel():
+        linhas = "\n".join(
+            f"- {t['turma']}: leitura {t['taxa_leitura']}%, {t['risco']} famílias em risco"
+            for t in engajamento
+        )
+        r = llm.completar(
+            system=(
+                "Você é a Cora, analista de engajamento de uma escola. A partir dos "
+                "dados de leitura por turma, escreva um insight de 2 a 3 frases para a "
+                "coordenação: aponte o ponto de atenção e dê UMA recomendação prática "
+                "(ex.: comunicado por WhatsApp, contato individual). Português do Brasil, "
+                "tom direto e profissional."
+            ),
+            user=f"Taxa média: {media}%.\nPor turma:\n{linhas}",
+            max_tokens=220,
+            effort="medium",
+        )
+        if r:
+            return r
+
     return (
         f"A taxa média de leitura está em {media}%. A turma {pior['turma']} é o "
         f"ponto de atenção ({pior['taxa_leitura']}%), com {pior['risco']} famílias "
