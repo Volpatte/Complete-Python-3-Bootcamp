@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <span class="pill ai">⚡ Comunicação escolar com inteligência</span>
+  <h1>O elo entre escola e família — sem ruído.</h1>
+  <p>Tudo que o Agenda Edu e o ClassApp fazem, mais a camada que falta:
+     IA que resume e prioriza, analytics que viram decisão, WhatsApp nativo
+     e integração com os sistemas que a escola já usa.</p>
+  <div class="feature-tags">
+    <span class="pill ai">IA nativa</span>
+    <span class="pill green">Analytics pedagógico</span>
+    <span class="pill blue">WhatsApp / omnichannel</span>
+    <span class="pill amber">Integra ERP · LMS · Financeiro</span>
+  </div>
+</section>
+
+<p class="section-title">Entre como…</p>
+<div class="grid cols-3">
+  <a href="/coordenacao" class="card role-card">
+    <div class="ico">🏫</div>
+    <h3>Coordenação / Direção</h3>
+    <p>Dashboards de engajamento, insights de IA e radar de famílias em risco.</p>
+    <span class="btn ghost">Abrir painel</span>
+  </a>
+  <a href="/professor" class="card role-card">
+    <div class="ico">👩‍🏫</div>
+    <h3>Professor</h3>
+    <p>Escreva um comunicado e veja a IA resumir, priorizar e traduzir antes de enviar.</p>
+    <span class="btn ghost">Abrir painel</span>
+  </a>
+  <a href="/familia" class="card role-card">
+    <div class="ico">👨‍👩‍👧</div>
+    <h3>Família</h3>
+    <p>Feed inteligente, agenda, tarefas e autorizações — com respostas sugeridas.</p>
+    <span class="btn ghost">Abrir app</span>
+  </a>
+</div>
+
+<p class="section-title">{{ escola.nome }} · demonstração</p>
+<div class="grid cols-4">
+  <div class="card kpi"><div class="num">{{ escola.alunos }}</div><div class="lbl">alunos</div></div>
+  <div class="card kpi"><div class="num">{{ escola.familias }}</div><div class="lbl">famílias</div></div>
+  <div class="card kpi"><div class="num">{{ escola.professores }}</div><div class="lbl">professores</div></div>
+  <div class="card kpi"><div class="num">{{ escola.cidade }}</div><div class="lbl">unidade</div></div>
+</div>
+{% endblock %}

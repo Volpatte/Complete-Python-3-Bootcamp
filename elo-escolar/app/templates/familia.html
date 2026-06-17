@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set active = 'fam' %}
+{% block title %}Família · Elo Escolar{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 2px">Oi, {{ responsavel.nome }} 👋</h2>
+<p class="muted small">{{ responsavel.filho }} · {{ responsavel.turma }}</p>
+
+<div class="grid cols-2" style="margin-top:18px">
+  <div>
+    <p class="section-title" style="margin-top:0">Feed inteligente</p>
+    <p class="muted small" style="margin-top:-6px">Ordenado por prioridade pela IA · com resumo de 1 linha</p>
+    {% for c in comunicados %}
+      {% set p = ai.prioridade(c.titulo, c.corpo) %}
+      <a class="comunicado" href="/familia/comunicado/{{ c.id }}">
+        <span class="pill" style="background:{{ p.cor }}1a;color:{{ p.cor }}">{{ p.rotulo }}</span>
+        {% if c.precisa_confirmar %}<span class="pill amber">precisa confirmar</span>{% endif %}
+        <div class="titulo">{{ c.titulo }}</div>
+        <div class="ai-box" style="margin:8px 0">
+          <div class="head">✨ Resumo</div>
+          <div class="small">{{ ai.resumir(c.corpo) }}</div>
+        </div>
+        <div class="meta">{{ c.autor }} · {{ c.enviado_em|data_hora }}</div>
+      </a>
+    {% endfor %}
+
+    <div class="card wa" style="margin-top:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="pill green">WhatsApp</span>
+        <strong class="small">Você também recebe tudo isso no WhatsApp</strong>
+      </div>
+      <p class="muted small" style="margin:8px 0 0">
+        Omnichannel nativo: a família responde de onde preferir — app ou WhatsApp —
+        e a escola vê tudo num lugar só.</p>
+    </div>
+  </div>
+
+  <div>
+    <p class="section-title" style="margin-top:0">Agenda</p>
+    <div class="card">
+      <ul class="list">
+        {% for e in eventos %}
+        <li>
+          <div><strong>{{ e.data|dia }}</strong> · {{ e.titulo }}</div>
+          <span class="pill {{ 'red' if e.tipo=='urgente' else 'blue' }}">{{ e.tipo }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <p class="section-title">Tarefas do Pedro</p>
+    <div class="card">
+      <ul class="list">
+        {% for t in tarefas %}
+        <li>
+          <div><strong>{{ t.disciplina }}</strong><br><span class="small muted">{{ t.titulo }}</span></div>
+          <span class="pill {{ 'green' if t.status=='entregue' else 'amber' }}">{{ t.entrega|dia }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <p class="section-title">Autorizações</p>
+    <div class="card">
+      <ul class="list">
+        {% for a in autorizacoes %}
+        <li>
+          <div><strong>{{ a.titulo }}</strong><br><span class="small muted">{{ a.data_evento|dia }}</span></div>
+          {% if a.status == 'autorizado' %}
+            <span class="pill green">autorizado</span>
+          {% else %}
+            <button class="btn ghost" style="padding:6px 14px">Autorizar</button>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active = 'fam' %}
+{% block title %}{{ c.titulo }} · Elo Escolar{% endblock %}
+{% block content %}
+<a href="/familia" class="small muted">← voltar ao feed</a>
+
+<div class="card" style="margin-top:12px">
+  <span class="pill" style="background:{{ prioridade.cor }}1a;color:{{ prioridade.cor }}">{{ prioridade.rotulo }}</span>
+  {% if c.precisa_confirmar %}<span class="pill amber">precisa confirmar</span>{% endif %}
+  <h2 style="margin:10px 0 2px">{{ c.titulo }}</h2>
+  <div class="muted small">{{ c.autor }} · {{ c.turma }} · {{ c.enviado_em|data_hora }}</div>
+
+  <div class="ai-box">
+    <div class="head">✨ Resumo &amp; tradução</div>
+    <div>{{ resumo }}</div>
+    <div class="muted small" style="margin-top:8px">🌐 {{ traducao }} · toque para traduzir para outro idioma</div>
+  </div>
+
+  <p style="white-space:pre-line">{{ c.corpo }}</p>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <div class="head" style="display:flex;align-items:center;gap:8px;font-weight:700;color:#6d28d9">✨ Respostas sugeridas</div>
+  <p class="sub">A IA propõe respostas — você só toca e envia</p>
+  {% for s in sugestoes %}
+    <span class="chip-reply">{{ s }}</span>
+  {% endfor %}
+
+  {% if acao %}
+  <div style="margin-top:18px">
+    <button class="btn block">{{ acao }}</button>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

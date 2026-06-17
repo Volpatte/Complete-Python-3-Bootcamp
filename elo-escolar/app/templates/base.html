@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Elo Escolar{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand"><span class="logo">E</span> Elo Escolar</a>
+    <nav class="nav">
+      <a href="/coordenacao" class="{{ 'active' if active=='coord' }}">Coordenação</a>
+      <a href="/professor" class="{{ 'active' if active=='prof' }}">Professor</a>
+      <a href="/familia" class="{{ 'active' if active=='fam' }}">Família</a>
+    </nav>
+  </header>
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

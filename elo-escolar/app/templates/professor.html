@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set active = 'prof' %}
+{% block title %}Professor · Elo Escolar{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 2px">Olá, Prof. Marina 👋</h2>
+<p class="muted small">Componha um comunicado e deixe a IA preparar antes de enviar</p>
+
+<div class="grid cols-2" style="margin-top:18px">
+  <div class="card">
+    <h3>Novo comunicado</h3>
+    <p class="sub">A IA gera resumo, sugere prioridade e traduz automaticamente</p>
+    <form action="/professor/preview" method="post">
+      <label>Turma</label>
+      <select name="turma">
+        <option>Toda a escola</option>
+        {% for t in turmas %}<option>{{ t.nome }}</option>{% endfor %}
+      </select>
+      <label>Título</label>
+      <input name="titulo" placeholder="Ex.: Prova de Matemática na sexta"
+             value="{{ preview.titulo if preview and preview.titulo != '(sem título)' else '' }}">
+      <label>Mensagem</label>
+      <textarea name="corpo" rows="6" placeholder="Escreva o comunicado…">{{ preview.corpo if preview else '' }}</textarea>
+      <div style="margin-top:14px"><button class="btn block" type="submit">✨ Pré-processar com IA</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Prévia inteligente</h3>
+    {% if not preview %}
+      <p class="sub">Preencha o formulário ao lado e clique em pré-processar para ver
+         como a IA transforma seu texto antes do envio.</p>
+      <div class="ai-box">
+        <div class="head">✨ O que a IA faz aqui</div>
+        <ul class="small" style="margin:0;padding-left:18px;color:var(--muted)">
+          <li>Resume o comunicado em 1 frase para o feed da família</li>
+          <li>Sugere a prioridade (urgente / importante / informativo)</li>
+          <li>Traduz automaticamente para famílias estrangeiras</li>
+          <li>Recomenda se deve pedir confirmação de leitura</li>
+        </ul>
+      </div>
+    {% else %}
+      <span class="pill" style="background:{{ preview.prioridade.cor }}1a;color:{{ preview.prioridade.cor }}">
+        Prioridade sugerida: {{ preview.prioridade.rotulo }}
+      </span>
+      <div style="font-weight:700;margin:10px 0 2px">{{ preview.titulo }}</div>
+      <div class="muted small">Para: {{ preview.turma }}</div>
+
+      <div class="ai-box">
+        <div class="head">✨ Resumo para o feed</div>
+        <div>{{ preview.resumo or '—' }}</div>
+      </div>
+
+      <div class="small"><strong>Tradução automática:</strong></div>
+      {% for t in preview.traducoes %}<span class="pill blue" style="margin:4px 4px 0 0">{{ t }}</span>{% endfor %}
+
+      <div style="margin-top:16px"><button class="btn block">Enviar comunicado</button></div>
+    {% endif %}
+  </div>
+</div>
+
+<p class="section-title">Tarefas lançadas</p>
+<div class="card">
+  <ul class="list">
+    {% for t in tarefas %}
+    <li>
+      <div><strong>{{ t.disciplina }}</strong> — {{ t.titulo }}</div>
+      <span class="pill {{ 'green' if t.status=='entregue' else 'amber' }}">
+        entrega {{ t.entrega|dia }}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
