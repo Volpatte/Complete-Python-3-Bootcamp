@@ -103,3 +103,33 @@ class Autorizacao(Base):
     data_evento: Mapped[date] = mapped_column(Date)
     descricao: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="pendente")
+
+
+class Conversa(Base):
+    """Fio de conversa entre uma família e um canal da escola (prof/coord/financeiro)."""
+
+    __tablename__ = "conversas"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"))
+    familia_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    canal: Mapped[str] = mapped_column(String(80))          # rótulo exibido (ex.: "Prof. Marina")
+    staff_papel: Mapped[str] = mapped_column(String(20))    # qual papel atende (professor|coordenacao)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    mensagens: Mapped[list["Mensagem"]] = relationship(
+        order_by="Mensagem.enviado_em", cascade="all, delete-orphan", back_populates="conversa"
+    )
+
+
+class Mensagem(Base):
+    __tablename__ = "mensagens"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversa_id: Mapped[int] = mapped_column(ForeignKey("conversas.id"), index=True)
+    autor_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
+    autor_nome: Mapped[str] = mapped_column(String(120))
+    autor_papel: Mapped[str] = mapped_column(String(20))    # familia | professor | coordenacao
+    corpo: Mapped[str] = mapped_column(Text)
+    enviado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    conversa: Mapped["Conversa"] = relationship(back_populates="mensagens")

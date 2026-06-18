@@ -8,6 +8,8 @@ Usuários de demonstração (senha: cora123):
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -71,5 +73,37 @@ def _seed(db: Session) -> None:
             usuario_id=familia.id, titulo=a["titulo"], data_evento=a["data_evento"],
             descricao=a["descricao"], status=a["status"],
         ))
+
+    # Conversas de exemplo (mensageria pessoa↔pessoa)
+    conv_prof = models.Conversa(
+        escola_id=escola.id, familia_id=familia.id, canal="Prof. Marina",
+        staff_papel=models.PROFESSOR,
+        criado_em=datetime(2026, 6, 17, 14, 0), atualizado_em=datetime(2026, 6, 17, 14, 11),
+    )
+    conv_coord = models.Conversa(
+        escola_id=escola.id, familia_id=familia.id, canal="Coordenação",
+        staff_papel=models.COORDENACAO,
+        criado_em=datetime(2026, 6, 16, 9, 0), atualizado_em=datetime(2026, 6, 16, 9, 30),
+    )
+    db.add_all([conv_prof, conv_coord])
+    db.flush()
+
+    db.add_all([
+        models.Mensagem(
+            conversa_id=conv_prof.id, autor_id=prof.id, autor_nome=prof.nome,
+            autor_papel=models.PROFESSOR, enviado_em=datetime(2026, 6, 17, 14, 2),
+            corpo=f"Oi {familia.nome.split(' ')[0]}! O {familia.filho_nome.split(' ')[0]} foi muito bem na atividade de frações hoje 😊",
+        ),
+        models.Mensagem(
+            conversa_id=conv_prof.id, autor_id=prof.id, autor_nome=prof.nome,
+            autor_papel=models.PROFESSOR, enviado_em=datetime(2026, 6, 17, 14, 3),
+            corpo="Só não esqueça que amanhã a saída é antecipada, às 11h30.",
+        ),
+        models.Mensagem(
+            conversa_id=conv_coord.id, autor_id=coord.id, autor_nome=coord.nome,
+            autor_papel=models.COORDENACAO, enviado_em=datetime(2026, 6, 16, 9, 30),
+            corpo="Bom dia! A reunião de pais do 5º Ano A está confirmada para 24/06, às 19h.",
+        ),
+    ])
 
     db.commit()

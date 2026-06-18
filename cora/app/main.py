@@ -281,8 +281,100 @@ def familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir
 
 
 @app.get("/familia/mensagens", response_class=HTMLResponse)
-def familia_mensagens(request: Request, user=Depends(exigir("familia"))):
-    return templates.TemplateResponse("mensagens.html", _ctx(request, user, responsavel=_responsavel(user)))
+def familia_mensagens(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
+    conversas = list(
+        db.scalars(
+            select(models.Conversa)
+            .where(models.Conversa.familia_id == user.id)
+            .order_by(models.Conversa.atualizado_em.desc())
+        )
+    )
+    return templates.TemplateResponse(
+        "mensagens.html", _ctx(request, user, responsavel=_responsavel(user), conversas=conversas)
+    )
+
+
+def _conversa_da_familia(db: Session, cid: int, user) -> models.Conversa | None:
+    c = db.get(models.Conversa, cid)
+    return c if c and c.familia_id == user.id else None
+
+
+@app.get("/familia/mensagens/{cid}", response_class=HTMLResponse)
+def familia_conversa(request: Request, cid: int, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
+    conversa = _conversa_da_familia(db, cid, user)
+    if not conversa:
+        return RedirectResponse("/familia/mensagens", status_code=303)
+    return templates.TemplateResponse(
+        "conversa.html", _ctx(request, user, responsavel=_responsavel(user), conversa=conversa)
+    )
+
+
+@app.post("/familia/mensagens/{cid}/enviar")
+def familia_conversa_enviar(
+    request: Request, cid: int, corpo: str = Form(...),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    conversa = _conversa_da_familia(db, cid, user)
+    if conversa and corpo.strip():
+        agora = datetime.utcnow()
+        db.add(models.Mensagem(
+            conversa_id=conversa.id, autor_id=user.id, autor_nome=user.nome,
+            autor_papel=models.FAMILIA, corpo=corpo.strip(), enviado_em=agora,
+        ))
+        conversa.atualizado_em = agora
+        db.commit()
+    return RedirectResponse(f"/familia/mensagens/{cid}", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Mensageria do lado da escola (professor / coordenação)
+# --------------------------------------------------------------------------- #
+@app.get("/mensagens", response_class=HTMLResponse)
+def staff_mensagens(request: Request, db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao"))):
+    conversas = list(
+        db.scalars(
+            select(models.Conversa)
+            .where(models.Conversa.escola_id == user.escola_id, models.Conversa.staff_papel == user.papel)
+            .order_by(models.Conversa.atualizado_em.desc())
+        )
+    )
+    return templates.TemplateResponse(
+        "staff_mensagens.html", _ctx(request, user, conversas=conversas, active="msg")
+    )
+
+
+def _conversa_do_staff(db: Session, cid: int, user) -> models.Conversa | None:
+    c = db.get(models.Conversa, cid)
+    if c and c.escola_id == user.escola_id and c.staff_papel == user.papel:
+        return c
+    return None
+
+
+@app.get("/mensagens/{cid}", response_class=HTMLResponse)
+def staff_conversa(request: Request, cid: int, db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao"))):
+    conversa = _conversa_do_staff(db, cid, user)
+    if not conversa:
+        return RedirectResponse("/mensagens", status_code=303)
+    return templates.TemplateResponse(
+        "staff_conversa.html", _ctx(request, user, conversa=conversa, active="msg")
+    )
+
+
+@app.post("/mensagens/{cid}/enviar")
+def staff_conversa_enviar(
+    request: Request, cid: int, corpo: str = Form(...),
+    db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao")),
+):
+    conversa = _conversa_do_staff(db, cid, user)
+    if conversa and corpo.strip():
+        agora = datetime.utcnow()
+        db.add(models.Mensagem(
+            conversa_id=conversa.id, autor_id=user.id, autor_nome=user.nome,
+            autor_papel=user.papel, corpo=corpo.strip(), enviado_em=agora,
+        ))
+        conversa.atualizado_em = agora
+        db.commit()
+    return RedirectResponse(f"/mensagens/{cid}", status_code=303)
 
 
 @app.get("/familia/agenda", response_class=HTMLResponse)

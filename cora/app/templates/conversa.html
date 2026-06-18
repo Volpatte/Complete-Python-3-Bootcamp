@@ -1,0 +1,39 @@
+{% extends "app_shell.html" %}
+{% set tab = 'msg' %}
+{% block title %}{{ conversa.canal }} · Cora{% endblock %}
+{% block screen %}
+
+<div class="chat-head">
+  <a href="/familia/mensagens" class="back">‹</a>
+  <div class="pin" style="width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#ff3d71,#ff8fab);display:grid;place-items:center;font-size:18px">
+    {% if conversa.staff_papel == 'coordenacao' %}🏫{% else %}🍎{% endif %}
+  </div>
+  <div style="flex:1">
+    <div style="font-weight:800">{{ conversa.canal }}</div>
+    <div style="font-size:12px;opacity:.85">{{ responsavel.turma }}</div>
+  </div>
+</div>
+
+<div id="chat" class="bubbles">
+  {% for m in conversa.mensagens %}
+    <div class="bubble {{ 'me' if m.autor_papel == 'familia' else 'them' }}">
+      {{ m.corpo }}<div class="t">{{ m.enviado_em|data_hora }}</div>
+    </div>
+  {% else %}
+    <p class="muted small center">Nenhuma mensagem ainda. Diga olá 👋</p>
+  {% endfor %}
+</div>
+
+<form method="post" action="/familia/mensagens/{{ conversa.id }}/enviar"
+      style="position:sticky;bottom:84px;display:flex;gap:10px;align-items:center;padding:10px 16px;background:linear-gradient(180deg,transparent,var(--surface-2) 30%)">
+  <input name="corpo" autocomplete="off" placeholder="Mensagem…" required
+         style="flex:1;border:1px solid var(--line);border-radius:16px;padding:13px 16px;font-size:14px;font-family:inherit;background:#fff">
+  <button class="cta" style="width:52px;padding:13px" type="submit">➤</button>
+</form>
+
+<script>
+  const s = document.querySelector('.screen');
+  if (s) s.scrollTop = s.scrollHeight;
+</script>
+
+{% endblock %}

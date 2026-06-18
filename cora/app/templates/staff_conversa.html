@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set active = 'msg' %}
+{% block title %}{{ conversa.canal }} · Cora{% endblock %}
+{% block content %}
+<a href="/mensagens" class="small muted">← voltar às mensagens</a>
+<h2 style="margin:8px 0 2px">{{ conversa.canal }}</h2>
+<p class="muted small">Conversa com a família</p>
+
+<div class="card" style="margin-top:14px">
+  <div style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto">
+    {% for m in conversa.mensagens %}
+      {% set meu = m.autor_papel == user.papel %}
+      <div style="max-width:78%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
+                  {{ 'align-self:flex-end;background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff' if meu
+                     else 'align-self:flex-start;background:#f3f4f6;color:#14112b' }}">
+        <div style="font-size:11px;opacity:.75;margin-bottom:2px">{{ m.autor_nome }}</div>
+        {{ m.corpo }}
+        <div style="font-size:10px;opacity:.7;margin-top:4px">{{ m.enviado_em|data_hora }}</div>
+      </div>
+    {% else %}
+      <p class="muted small">Nenhuma mensagem ainda.</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="/mensagens/{{ conversa.id }}/enviar" style="display:flex;gap:10px;margin-top:14px">
+    <input name="corpo" placeholder="Escreva uma resposta…" required
+           style="flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit">
+    <button class="btn" type="submit">Enviar</button>
+  </form>
+</div>
+{% endblock %}
