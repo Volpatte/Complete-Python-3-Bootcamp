@@ -52,3 +52,26 @@ def test_professor_preview_ia(professor):
         "titulo": "URGENTE: cancelamento", "corpo": "A aula de amanhã foi cancelada.", "turma": "Toda a escola",
     })
     assert r.status_code == 200 and "Urgente" in r.text
+
+
+def test_professor_lanca_tarefa_aparece_na_familia(professor, familia):
+    professor.post("/professor/tarefa", data={
+        "disciplina": "Geografia", "titulo": "Mapa do Brasil", "entrega": "2026-06-30",
+        "turma": "5º Ano A",
+    }, follow_redirects=False)
+    assert "Mapa do Brasil" in familia.get("/familia").text
+
+
+def test_professor_cria_evento_aparece_na_agenda(professor, familia):
+    professor.post("/professor/evento", data={
+        "titulo": "Feira de Ciências", "data_evento": "2026-06-28", "tipo": "evento",
+    }, follow_redirects=False)
+    assert "Feira de Ciências" in familia.get("/familia/agenda").text
+
+
+def test_familia_nao_ve_tarefa_de_outra_turma(professor, familia):
+    professor.post("/professor/tarefa", data={
+        "disciplina": "História", "titulo": "Trabalho do 3B", "entrega": "2026-07-01",
+        "turma": "3º Ano B",
+    }, follow_redirects=False)
+    assert "Trabalho do 3B" not in familia.get("/familia").text

@@ -5,6 +5,8 @@
 <h2 style="margin:0 0 2px">Olá, {{ user.nome }} 👋</h2>
 <p class="muted small">Componha um comunicado e deixe a IA preparar antes de enviar</p>
 {% if enviado %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">✅ Comunicado enviado e já disponível no feed das famílias!</div>{% endif %}
+{% if ok == 'tarefa' %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">✅ Tarefa lançada — já aparece para as famílias da turma.</div>{% endif %}
+{% if ok == 'evento' %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">✅ Evento criado — já aparece na agenda das famílias.</div>{% endif %}
 
 <div class="grid cols-2" style="margin-top:18px">
   <div class="card">
@@ -67,17 +69,85 @@
   </div>
 </div>
 
+<div class="grid cols-2">
+  <div>
+    <p class="section-title">Lançar tarefa</p>
+    <div class="card">
+      <p class="sub">Aparece no app das famílias da turma</p>
+      <form action="/professor/tarefa" method="post">
+        <label>Turma</label>
+        <select name="turma">
+          <option>Toda a escola</option>
+          {% for t in turmas %}<option>{{ t.nome }}</option>{% endfor %}
+        </select>
+        <label>Disciplina</label>
+        <input name="disciplina" placeholder="Ex.: Matemática" required>
+        <label>Título</label>
+        <input name="titulo" placeholder="Ex.: Lista de frações 1 a 12" required>
+        <label>Entrega</label>
+        <input name="entrega" type="date">
+        <div style="margin-top:14px"><button class="btn block" type="submit">Lançar tarefa</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <p class="section-title">Criar evento na agenda</p>
+    <div class="card">
+      <p class="sub">Aparece na agenda das famílias</p>
+      <form action="/professor/evento" method="post">
+        <label>Título</label>
+        <input name="titulo" placeholder="Ex.: Feira de Ciências" required>
+        <label>Data</label>
+        <input name="data_evento" type="date">
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="evento">Evento</option>
+          <option value="prova">Prova</option>
+          <option value="reuniao">Reunião</option>
+        </select>
+        <div style="margin-top:14px"><button class="btn block" type="submit">Criar evento</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <p class="section-title">Tarefas lançadas</p>
 <div class="card">
   <ul class="list">
     {% for t in tarefas %}
     <li>
-      <div><strong>{{ t.disciplina }}</strong> — {{ t.titulo }}</div>
-      <span class="pill {{ 'green' if t.status=='entregue' else 'amber' }}">
-        entrega {{ t.entrega|dia }}
-      </span>
+      <div><strong>{{ t.disciplina }}</strong> — {{ t.titulo }} <span class="muted small">· {{ t.turma }}</span></div>
+      <span class="pill {{ 'green' if t.status=='entregue' else 'amber' }}">entrega {{ t.entrega|dia }}</span>
     </li>
+    {% else %}
+    <li><span class="muted small">Nenhuma tarefa lançada.</span></li>
     {% endfor %}
   </ul>
+</div>
+
+<p class="section-title">Próximos eventos</p>
+<div class="card">
+  <ul class="list">
+    {% for e in eventos %}
+    <li>
+      <div><strong>{{ e.data|dia }}</strong> · {{ e.titulo }}</div>
+      <span class="pill {{ 'red' if e.tipo=='urgente' else ('amber' if e.tipo=='prova' else 'blue') }}">{{ e.tipo }}</span>
+    </li>
+    {% else %}
+    <li><span class="muted small">Nenhum evento.</span></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<p class="section-title">Minhas turmas</p>
+<div class="grid cols-4">
+  {% for t in turmas %}
+  <div class="card kpi">
+    <div class="num">{{ t.alunos }}</div>
+    <div class="lbl">{{ t.nome }}</div>
+    <div class="muted small" style="margin-top:4px">{{ t.professor }}</div>
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}

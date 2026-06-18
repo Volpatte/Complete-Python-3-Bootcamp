@@ -12,7 +12,7 @@ Usuários demo (senha: cora123): coord@cora.app · prof@cora.app · familia@cora
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, Request
@@ -187,18 +187,55 @@ def _comunicados_prof(db: Session, escola_id: int):
 
 
 @app.get("/professor", response_class=HTMLResponse)
-def professor(request: Request, db: Session = Depends(get_db), user=Depends(exigir("professor")), enviado: int = 0):
+def professor(request: Request, db: Session = Depends(get_db), user=Depends(exigir("professor")),
+              enviado: int = 0, ok: str = ""):
     return templates.TemplateResponse(
         "professor.html",
         _ctx(
             request, user,
             turmas=data.TURMAS,
             tarefas=_tarefas(db, user.escola_id),
+            eventos=list(db.scalars(select(models.Evento).where(models.Evento.escola_id == user.escola_id).order_by(models.Evento.data))),
             comunicados=_comunicados_prof(db, user.escola_id),
             preview=None,
             enviado=enviado,
+            ok=ok,
         ),
     )
+
+
+@app.post("/professor/tarefa")
+def professor_tarefa(
+    request: Request, disciplina: str = Form(...), titulo: str = Form(...),
+    entrega: str = Form(""), turma: str = Form("Toda a escola"),
+    db: Session = Depends(get_db), user=Depends(exigir("professor")),
+):
+    try:
+        venc = date.fromisoformat(entrega) if entrega else date.today()
+    except ValueError:
+        venc = date.today()
+    if titulo.strip():
+        db.add(models.Tarefa(
+            escola_id=user.escola_id, turma=turma, disciplina=disciplina.strip(),
+            titulo=titulo.strip(), entrega=venc, status="pendente",
+        ))
+        db.commit()
+    return RedirectResponse("/professor?ok=tarefa", status_code=303)
+
+
+@app.post("/professor/evento")
+def professor_evento(
+    request: Request, titulo: str = Form(...), data_evento: str = Form(""), tipo: str = Form("evento"),
+    db: Session = Depends(get_db), user=Depends(exigir("professor")),
+):
+    try:
+        quando = date.fromisoformat(data_evento) if data_evento else date.today()
+    except ValueError:
+        quando = date.today()
+    if titulo.strip():
+        db.add(models.Evento(escola_id=user.escola_id, data=quando, titulo=titulo.strip(), tipo=tipo.strip() or "evento"))
+        db.commit()
+    return RedirectResponse("/professor?ok=evento", status_code=303)
 
 
 @app.post("/professor/preview", response_class=HTMLResponse)
@@ -291,13 +328,19 @@ def familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir
     ))
     ordem = {"alta": 0, "media": 1, "baixa": 2}
     comunicados.sort(key=lambda c: (ordem[ai.prioridade(c.titulo, c.corpo)["nivel"]], -c.id))
+    tarefas = list(db.scalars(
+        select(models.Tarefa).where(
+            models.Tarefa.escola_id == user.escola_id,
+            or_(models.Tarefa.turma == "Toda a escola", models.Tarefa.turma == user.turma),
+        )
+    ))
     return templates.TemplateResponse(
         "familia.html",
         _ctx(
             request, user,
             responsavel=_responsavel(user),
             comunicados=comunicados,
-            tarefas=_tarefas(db, user.escola_id),
+            tarefas=tarefas,
             eventos=list(db.scalars(select(models.Evento).where(models.Evento.escola_id == user.escola_id).order_by(models.Evento.data))),
             autorizacoes=list(db.scalars(select(models.Autorizacao).where(models.Autorizacao.usuario_id == user.id))),
         ),
