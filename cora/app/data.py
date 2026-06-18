@@ -193,22 +193,8 @@ AUTORIZACOES = [
 ]
 
 
-# --------------------------------------------------------------------------- #
-# Analytics de engajamento (diferencial: dados viram decisão)
-# --------------------------------------------------------------------------- #
-ENGAJAMENTO_POR_TURMA = [
-    {"turma": "5º Ano A", "taxa_leitura": 86, "famílias_ativas": 26, "risco": 2},
-    {"turma": "5º Ano B", "taxa_leitura": 71, "famílias_ativas": 19, "risco": 7},
-    {"turma": "3º Ano A", "taxa_leitura": 64, "famílias_ativas": 16, "risco": 8},
-    {"turma": "Infantil II", "taxa_leitura": 93, "famílias_ativas": 17, "risco": 1},
-]
-
-# Famílias com baixo engajamento — IA sinaliza quem pode "sumir" / churn
-FAMILIAS_RISCO = [
-    {"nome": "Família Souza (3º A)", "ultima_leitura": "há 12 dias", "motivo": "Não lê comunicados financeiros"},
-    {"nome": "Família Oliveira (5º B)", "ultima_leitura": "há 9 dias", "motivo": "Abriu app 1x no mês"},
-    {"nome": "Família Lima (3º A)", "ultima_leitura": "há 8 dias", "motivo": "Não confirmou últimas 3 reuniões"},
-]
+# Engajamento por turma e radar de famílias em risco agora são calculados ao
+# vivo a partir do banco — ver app/analytics.py.
 
 
 # --------------------------------------------------------------------------- #

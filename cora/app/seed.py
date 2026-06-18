@@ -8,7 +8,8 @@ Usuários de demonstração (senha: cora123):
 
 from __future__ import annotations
 
-from datetime import datetime
+import math
+from datetime import datetime, time, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -51,14 +52,16 @@ def _seed(db: Session) -> None:
     )
     db.add_all([coord, prof, familia])
 
+    coms_objs = []
     for c in data.COMUNICADOS:
-        db.add(models.Comunicado(
+        obj = models.Comunicado(
             escola_id=escola.id, titulo=c["titulo"], autor=c["autor"], turma=c["turma"],
             categoria=c["categoria"], corpo=c["corpo"], resumo=ai.resumir(c["corpo"]),
             precisa_confirmar=c["precisa_confirmar"],
-            enviado_em=c["enviado_em"], total_familias=c["total_familias"],
-            leram=c["leram"], confirmaram=c["confirmaram"],
-        ))
+            enviado_em=c["enviado_em"], total_familias=0, leram=0, confirmaram=c["confirmaram"],
+        )
+        db.add(obj)
+        coms_objs.append(obj)
 
     for t in data.TAREFAS:
         db.add(models.Tarefa(
@@ -69,12 +72,58 @@ def _seed(db: Session) -> None:
     for e in data.EVENTOS:
         db.add(models.Evento(escola_id=escola.id, data=e["data"], titulo=e["titulo"], tipo=e["tipo"]))
 
-    db.flush()  # garante familia.id
+    db.flush()  # garante familia.id e os ids dos comunicados
     for a in data.AUTORIZACOES:
         db.add(models.Autorizacao(
             usuario_id=familia.id, titulo=a["titulo"], data_evento=a["data_evento"],
             descricao=a["descricao"], status=a["status"],
         ))
+
+    # --- Famílias extras + leituras (alimentam os analytics reais) ---
+    # perfil -> (fração de comunicados lidos, dias desde a última leitura)
+    perfis = {"alto": (0.95, 1), "medio": (0.70, 3), "baixo": (0.40, 6), "sumido": (0.15, 12)}
+    extras_def = [
+        ("5º Ano A", "Família Souza", "souza@cora.app", True, "alto"),
+        ("5º Ano A", "Família Mendes", "mendes@cora.app", True, "medio"),
+        ("5º Ano B", "Família Oliveira", "oliveira@cora.app", False, "baixo"),
+        ("5º Ano B", "Família Lima", "lima@cora.app", True, "sumido"),
+        ("3º Ano A", "Família Dias", "dias@cora.app", True, "baixo"),
+        ("3º Ano A", "Família Castro", "castro@cora.app", False, "sumido"),
+        ("Infantil II", "Família Rocha", "rocha@cora.app", True, "alto"),
+        ("Infantil II", "Família Pires", "pires@cora.app", True, "medio"),
+    ]
+    extras = []
+    for turma, nome, email, optin, perfil in extras_def:
+        u = models.Usuario(
+            nome=nome, email=email, senha_hash=senha, papel=models.FAMILIA, escola_id=escola.id,
+            filho_nome=nome.replace("Família ", "") + " Jr.", turma=turma,
+            telefone="+5548900000000", whatsapp_optin=optin,
+        )
+        db.add(u)
+        extras.append((u, perfil))
+    db.flush()
+
+    leram = {c.id: 0 for c in coms_objs}
+    total = {c.id: 0 for c in coms_objs}
+    for u, perfil in extras:
+        frac, dias = perfis[perfil]
+        addr = sorted([c for c in coms_objs if c.turma in (u.turma, "Toda a escola")],
+                      key=lambda c: c.enviado_em, reverse=True)
+        for c in addr:
+            total[c.id] += 1
+        for c in addr[:math.ceil(frac * len(addr))]:
+            db.add(models.Leitura(
+                comunicado_id=c.id, usuario_id=u.id, lido=True, confirmado=False,
+                lido_em=datetime.combine(data.HOJE - timedelta(days=dias), time(9, 0)),
+            ))
+            leram[c.id] += 1
+    # A família demo (Pedro) conta como destinatária, mas começa sem leituras.
+    for c in coms_objs:
+        if c.turma in (familia.turma, "Toda a escola"):
+            total[c.id] += 1
+    for c in coms_objs:
+        c.total_familias = total[c.id] or 1
+        c.leram = leram[c.id]
 
     # Conversas de exemplo (mensageria pessoa↔pessoa)
     conv_prof = models.Conversa(

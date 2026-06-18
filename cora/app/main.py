@@ -24,7 +24,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import ai, assistant, data, models, whatsapp
+from . import ai, analytics, assistant, data, models, whatsapp
 from .db import get_db
 from .seed import init_db
 from .security import autenticar
@@ -150,20 +150,22 @@ def coordenacao(request: Request, db: Session = Depends(get_db), user=Depends(ex
             .order_by(models.Comunicado.enviado_em.desc())
         )
     )
-    com_total = [c for c in comunicados if c.total_familias]
+    engajamento = analytics.engajamento_por_turma(db, user.escola_id)
+    familias_risco = analytics.familias_em_risco(db, user.escola_id)
     media_leitura = (
-        round(sum(c.leram / c.total_familias * 100 for c in com_total) / len(com_total))
-        if com_total else 0
+        round(sum(t["taxa_leitura"] for t in engajamento) / len(engajamento))
+        if engajamento else 0
     )
+    insight = ai.insight_coordenacao(engajamento) if engajamento else "Ainda sem dados de leitura suficientes."
     return templates.TemplateResponse(
         "coordenacao.html",
         _ctx(
             request, user,
-            engajamento=data.ENGAJAMENTO_POR_TURMA,
-            familias_risco=data.FAMILIAS_RISCO,
+            engajamento=engajamento,
+            familias_risco=familias_risco,
             integracoes=data.INTEGRACOES,
             comunicados=comunicados,
-            insight=ai.insight_coordenacao(data.ENGAJAMENTO_POR_TURMA),
+            insight=insight,
             media_leitura=media_leitura,
         ),
     )

@@ -14,7 +14,8 @@ def test_comunicado_espelha_no_whatsapp(professor):
     professor.post("/professor/enviar", data={
         "titulo": "Reunião extra", "corpo": "Reunião extra na sexta.", "turma": "5º Ano A",
     }, follow_redirects=False)
-    assert _conta_entregas() == antes + 1
+    # espelha para TODAS as famílias inscritas da turma (>= 1)
+    assert _conta_entregas() > antes
 
 
 def test_central_mostra_modo_simulado(coord):
