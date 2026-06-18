@@ -19,6 +19,11 @@
     <div class="screen">
       {% block screen %}{% endblock %}
     </div>
+    <a href="/familia/assistente" class="fab-cora" aria-label="Falar com a Cora IA">
+      <span class="fab-ico">🤖</span>
+      <span class="fab-txt">Cora IA</span>
+    </a>
+
     <nav class="tabbar">
       <a href="/familia" class="{{ 'active' if tab=='inicio' }}"><span class="ti">🏠</span>Início</a>
       <a href="/familia/mensagens" class="{{ 'active' if tab=='msg' }}"><span class="ti">💬</span>Mensagens</a>

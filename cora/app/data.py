@@ -249,3 +249,17 @@ FINANCEIRO = {
     "aceita_pix": True,
 }
 
+
+# --------------------------------------------------------------------------- #
+# Loja online da escola (uniforme, material, eventos, cantina)
+# --------------------------------------------------------------------------- #
+LOJA = [
+    {"id": 1, "nome": "Camiseta do uniforme", "preco": "R$ 79,90", "emoji": "👕", "tag": "Vestuário"},
+    {"id": 2, "nome": "Kit de material — 5º ano", "preco": "R$ 240,00", "emoji": "🎒", "tag": "Material"},
+    {"id": 3, "nome": "Livro de leitura do trimestre", "preco": "R$ 58,00", "emoji": "📗", "tag": "Livros"},
+    {"id": 4, "nome": "Ingresso — Festa Junina", "preco": "R$ 25,00", "emoji": "🎉", "tag": "Eventos"},
+    {"id": 5, "nome": "Agenda escolar 2026", "preco": "R$ 34,90", "emoji": "📒", "tag": "Material"},
+    {"id": 6, "nome": "Cantina — 10 créditos de almoço", "preco": "R$ 120,00", "emoji": "🍽️", "tag": "Cantina"},
+]
+
+

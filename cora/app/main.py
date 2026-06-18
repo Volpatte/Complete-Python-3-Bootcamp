@@ -454,6 +454,13 @@ def familia_agenda(request: Request, db: Session = Depends(get_db), user=Depends
     return templates.TemplateResponse("agenda.html", _ctx(request, user, responsavel=_responsavel(user), eventos=eventos))
 
 
+@app.get("/familia/loja", response_class=HTMLResponse)
+def familia_loja(request: Request, user=Depends(exigir("familia"))):
+    return templates.TemplateResponse(
+        "loja.html", _ctx(request, user, responsavel=_responsavel(user), produtos=data.LOJA)
+    )
+
+
 @app.get("/familia/assistente", response_class=HTMLResponse)
 def familia_assistente(request: Request, user=Depends(exigir("familia"))):
     return templates.TemplateResponse(
