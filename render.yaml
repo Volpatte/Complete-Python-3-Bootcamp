@@ -1,0 +1,23 @@
+# Render Blueprint — deploy do Cora (https://render.com)
+# Sobe o app FastAPI com HTTPS automático. Veja cora/docs/deploy.md.
+services:
+  - type: web
+    name: cora
+    runtime: python
+    rootDir: cora
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: CORA_SECRET_KEY     # chave de sessão — gerada automaticamente
+        generateValue: true
+      - key: ANTHROPIC_API_KEY   # opcional: liga a IA real (defina no painel)
+        sync: false
+      - key: WHATSAPP_TOKEN      # opcional: WhatsApp real
+        sync: false
+      - key: WHATSAPP_PHONE_ID   # opcional: WhatsApp real
+        sync: false

@@ -38,6 +38,12 @@ Com a chave ativa: resumo abstrativo dos comunicados, insight analítico para a
 coordenação e o **Assistente Cora** respondendo em linguagem natural, ancorado
 nos dados reais do aluno (faltas, cardápio, agenda, financeiro).
 
+### Deploy (HTTPS) e instalação no celular
+
+Passo a passo em [`docs/deploy.md`](docs/deploy.md). Há um `render.yaml` (Blueprint)
+na raiz do repositório: no [Render](https://render.com) basta **New → Blueprint →
+Apply** para ganhar uma URL HTTPS gratuita e instalar o app no celular.
+
 ### Testes automatizados
 
 ```bash
