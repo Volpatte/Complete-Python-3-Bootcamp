@@ -12,15 +12,21 @@ Configurável por env:
 
 from __future__ import annotations
 
-import functools
 import os
 
 MODELO = os.getenv("CORA_MODELO", "claude-opus-4-8")
 
+_cache: dict = {}  # cacheia só o client bem-sucedido (não o None)
 
-@functools.lru_cache(maxsize=1)
+
 def _client():
-    """Cria o client uma vez. Retorna None se a IA real não estiver disponível."""
+    """Retorna o client da Anthropic, ou None se a IA real não estiver disponível.
+
+    Só memoiza o client criado com sucesso — assim, se a chave for definida depois
+    do primeiro acesso, a IA real passa a funcionar sem reiniciar o app.
+    """
+    if "c" in _cache:
+        return _cache["c"]
     if not os.getenv("ANTHROPIC_API_KEY"):
         return None
     try:
@@ -28,9 +34,11 @@ def _client():
     except ImportError:
         return None
     try:
-        return anthropic.Anthropic()
+        client = anthropic.Anthropic()
     except Exception:
         return None
+    _cache["c"] = client
+    return client
 
 
 def disponivel() -> bool:

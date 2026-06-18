@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -252,6 +252,7 @@ def professor_enviar(
         turma=turma,
         categoria="urgente" if prio["nivel"] == "alta" else "pedagogico",
         corpo=corpo,
+        resumo=ai.resumir(corpo),   # computa o resumo uma vez, no envio
         precisa_confirmar=precisa_confirmar,
         enviado_em=datetime.utcnow(),
         total_familias=turma_obj["alunos"] if turma_obj else data.ESCOLA["familias"],
@@ -282,7 +283,12 @@ def professor_enviar(
 # --------------------------------------------------------------------------- #
 @app.get("/familia", response_class=HTMLResponse)
 def familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
-    comunicados = list(db.scalars(select(models.Comunicado).where(models.Comunicado.escola_id == user.escola_id)))
+    comunicados = list(db.scalars(
+        select(models.Comunicado).where(
+            models.Comunicado.escola_id == user.escola_id,
+            or_(models.Comunicado.turma == "Toda a escola", models.Comunicado.turma == user.turma),
+        )
+    ))
     ordem = {"alta": 0, "media": 1, "baixa": 2}
     comunicados.sort(key=lambda c: (ordem[ai.prioridade(c.titulo, c.corpo)["nivel"]], -c.id))
     return templates.TemplateResponse(
@@ -521,10 +527,12 @@ def familia_saude(request: Request, db: Session = Depends(get_db), user=Depends(
             models.Medicacao.usuario_id == user.id, models.Medicacao.ativo == True  # noqa: E712
         ).order_by(models.Medicacao.criado_em.desc()))
     )
-    administracoes = sorted(
-        (a for m in medicacoes for a in m.administracoes),
-        key=lambda a: a.administrado_em, reverse=True,
-    )
+    administracoes = list(db.scalars(
+        select(models.AdministracaoMed)
+        .join(models.Medicacao)
+        .where(models.Medicacao.usuario_id == user.id)
+        .order_by(models.AdministracaoMed.administrado_em.desc())
+    ))
     medicacoes_nome = {m.id: m.nome for m in medicacoes}
     return templates.TemplateResponse(
         "saude.html",
@@ -589,7 +597,7 @@ def api_assistente(p: Pergunta, user=Depends(exigir("familia"))):
 @app.get("/familia/comunicado/{cid}", response_class=HTMLResponse)
 def familia_comunicado(request: Request, cid: int, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
     c = db.get(models.Comunicado, cid)
-    if not c or c.escola_id != user.escola_id:
+    if not c or c.escola_id != user.escola_id or c.turma not in ("Toda a escola", user.turma):
         return RedirectResponse("/familia", status_code=303)
 
     # Persiste a leitura de verdade (estado por usuário).
@@ -614,7 +622,7 @@ def familia_comunicado(request: Request, cid: int, db: Session = Depends(get_db)
             request, user,
             c=c,
             prioridade=prio,
-            resumo=ai.resumir(c.corpo),
+            resumo=c.resumo or ai.resumir(c.corpo),
             acao=ai.acao_sugerida(c.categoria, c.precisa_confirmar),
             sugestoes=ai.sugestoes_resposta(c.categoria, c.precisa_confirmar),
             traducao=ai.traduzir_rotulo(user.idioma),

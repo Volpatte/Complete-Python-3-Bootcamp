@@ -57,6 +57,7 @@ class Comunicado(Base):
     turma: Mapped[str] = mapped_column(String(60))
     categoria: Mapped[str] = mapped_column(String(40))
     corpo: Mapped[str] = mapped_column(Text)
+    resumo: Mapped[str] = mapped_column(Text, default="")   # resumo de 1 frase (pré-computado pela IA no envio)
     precisa_confirmar: Mapped[bool] = mapped_column(Boolean, default=False)
     enviado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     # Contadores denormalizados (no produto completo, derivados da tabela Leitura)

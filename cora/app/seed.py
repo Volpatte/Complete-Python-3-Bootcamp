@@ -13,7 +13,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import data, models
+from . import ai, data, models
 from .db import Base, SessionLocal, engine
 from .security import hash_senha
 
@@ -54,7 +54,8 @@ def _seed(db: Session) -> None:
     for c in data.COMUNICADOS:
         db.add(models.Comunicado(
             escola_id=escola.id, titulo=c["titulo"], autor=c["autor"], turma=c["turma"],
-            categoria=c["categoria"], corpo=c["corpo"], precisa_confirmar=c["precisa_confirmar"],
+            categoria=c["categoria"], corpo=c["corpo"], resumo=ai.resumir(c["corpo"]),
+            precisa_confirmar=c["precisa_confirmar"],
             enviado_em=c["enviado_em"], total_familias=c["total_familias"],
             leram=c["leram"], confirmaram=c["confirmaram"],
         ))

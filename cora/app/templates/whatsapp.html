@@ -36,7 +36,7 @@
 <div class="card">
   <ul class="list">
     {% for e in entregas %}
-    {% set cor = {'lido':'green','entregue':'blue','enviado':'amber','falhou':'red'}[e.status] %}
+    {% set cor = {'lido':'green','entregue':'blue','enviado':'amber','falhou':'red'}.get(e.status, 'gray') %}
     <li>
       <div>
         <strong>{{ e.destinatario_nome }}</strong>

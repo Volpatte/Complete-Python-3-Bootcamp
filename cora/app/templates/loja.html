@@ -19,7 +19,7 @@
       <span class="tag blue">{{ p.tag }}</span>
       <div style="font-weight:800;font-size:14px;margin:6px 0 2px;line-height:1.25">{{ p.nome }}</div>
       <div style="font-weight:800;color:var(--grape);font-size:16px;margin-bottom:10px">{{ p.preco }}</div>
-      <button class="cta" style="padding:11px;font-size:13px" onclick="comprar(this, '{{ p.nome }}')">Comprar via Pix</button>
+      <button class="cta" style="padding:11px;font-size:13px" data-nome="{{ p.nome }}" onclick="comprar(this)">Comprar via Pix</button>
     </div>
     {% endfor %}
   </div>
@@ -33,7 +33,8 @@
   .grid-loja { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 </style>
 <script>
-  function comprar(btn, nome) {
+  function comprar(btn) {
+    const nome = btn.dataset.nome;
     const t = document.getElementById('toast');
     t.textContent = '✓ ' + nome + ' — Pix gerado!';
     t.style.display = 'block';

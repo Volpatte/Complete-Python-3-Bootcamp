@@ -30,6 +30,23 @@ def test_professor_envia_aparece_no_feed(professor, familia):
     assert "Simulado no sábado" in familia.get("/familia").text
 
 
+def test_familia_nao_ve_comunicado_de_outra_turma(familia):
+    # cria um comunicado destinado a outra turma
+    with SessionLocal() as db:
+        fam = db.scalar(select(models.Usuario).where(models.Usuario.email == "familia@cora.app"))
+        outra = models.Comunicado(
+            escola_id=fam.escola_id, titulo="Recado do 3º Ano B", autor="Coordenação",
+            turma="3º Ano B", categoria="pedagogico", corpo="Conteúdo exclusivo do 3º Ano B.",
+        )
+        db.add(outra)
+        db.commit()
+        cid = outra.id
+    # não aparece no feed e não pode ser aberto
+    assert "Recado do 3º Ano B" not in familia.get("/familia").text
+    r = familia.get(f"/familia/comunicado/{cid}", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/familia"
+
+
 def test_professor_preview_ia(professor):
     r = professor.post("/professor/preview", data={
         "titulo": "URGENTE: cancelamento", "corpo": "A aula de amanhã foi cancelada.", "turma": "Toda a escola",

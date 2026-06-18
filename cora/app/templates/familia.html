@@ -48,7 +48,7 @@
       <div class="title">{{ c.titulo }}</div>
 
       <span class="ai-chip">✨ Resumo Cora IA</span>
-      <div class="ai-summary">{{ ai.resumir(c.corpo) }}</div>
+      <div class="ai-summary">{{ c.resumo or ai.resumir(c.corpo) }}</div>
 
       {% if c.precisa_confirmar %}<span class="tag amber">✅ precisa confirmar</span>{% endif %}
 
