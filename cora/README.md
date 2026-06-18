@@ -66,6 +66,25 @@ Usuários de demonstração (senha **`cora123`**), ou use os botões de acesso r
 - `/familia/assistente` — **Assistente Cora**: chat de IA que responde faltas, cardápio, agenda, tarefas e financeiro 24h (API `POST /api/assistente`)
 - `/familia/mensagens` — conversas reais com a escola; `/mensagens` (staff) — caixa de entrada do professor/coordenação. Mensageria pessoa↔pessoa persistida e bidirecional.
 
+### WhatsApp (omnichannel)
+
+Comunicados e mensagens do staff são **espelhados no WhatsApp** das famílias que
+optaram, com status rastreável (✓ enviado → ✓✓ entregue → ✓✓ lido). A coordenação
+acompanha tudo na **Central WhatsApp** (`/whatsapp`): taxa de entrega/leitura por
+mensagem.
+
+Por padrão roda em **modo simulado** (sem credenciais — os status são avançados
+na própria Central, para demo). Para o modo real, defina as credenciais da
+WhatsApp Business API (Graph API da Meta):
+
+```bash
+export WHATSAPP_TOKEN=...        # token da Meta
+export WHATSAPP_PHONE_ID=...     # phone number id
+```
+
+Com elas, `app/whatsapp.py` posta de verdade; os recibos de entrega/leitura
+viriam dos webhooks da Meta (ponto de entrada documentado no módulo).
+
 ### PWA (instalável no celular)
 
 O app da família é um **PWA**: tem `manifest.webmanifest`, ícones, página

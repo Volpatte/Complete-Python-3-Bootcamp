@@ -47,6 +47,7 @@ def _seed(db: Session) -> None:
         papel=models.FAMILIA, escola_id=escola.id,
         filho_nome=data.RESPONSAVEL["filho"], turma=data.RESPONSAVEL["turma"],
         idioma=data.RESPONSAVEL["idioma"],
+        telefone="+5548999990000", whatsapp_optin=True,
     )
     db.add_all([coord, prof, familia])
 
@@ -103,6 +104,28 @@ def _seed(db: Session) -> None:
             conversa_id=conv_coord.id, autor_id=coord.id, autor_nome=coord.nome,
             autor_papel=models.COORDENACAO, enviado_em=datetime(2026, 6, 16, 9, 30),
             corpo="Bom dia! A reunião de pais do 5º Ano A está confirmada para 24/06, às 19h.",
+        ),
+    ])
+
+    # Entregas de WhatsApp de exemplo (status variados para a Central)
+    db.add_all([
+        models.EntregaWhatsApp(
+            escola_id=escola.id, usuario_id=familia.id, destinatario_nome=familia.nome,
+            referencia="comunicado:2", resumo="URGENTE: saída antecipada amanhã às 11h30.",
+            status="lido", modo="simulado",
+            criado_em=datetime(2026, 6, 17, 7, 6), atualizado_em=datetime(2026, 6, 17, 7, 20),
+        ),
+        models.EntregaWhatsApp(
+            escola_id=escola.id, usuario_id=familia.id, destinatario_nome=familia.nome,
+            referencia="comunicado:3", resumo="Mensalidade de junho disponível (vence 20/06).",
+            status="entregue", modo="simulado",
+            criado_em=datetime(2026, 6, 15, 14, 1), atualizado_em=datetime(2026, 6, 15, 14, 2),
+        ),
+        models.EntregaWhatsApp(
+            escola_id=escola.id, usuario_id=familia.id, destinatario_nome=familia.nome,
+            referencia="mensagem:1", resumo="Prof. Marina: lembrete da saída antecipada.",
+            status="enviado", modo="simulado",
+            criado_em=datetime(2026, 6, 17, 14, 3), atualizado_em=datetime(2026, 6, 17, 14, 3),
         ),
     ])
 

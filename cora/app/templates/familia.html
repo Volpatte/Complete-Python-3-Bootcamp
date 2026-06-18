@@ -91,8 +91,14 @@
       <div style="flex:1"><div class="who" style="color:#fff">Receba também no WhatsApp</div>
       <div class="when" style="color:#cdeedd">canal oficial, sem grupo, sem ruído</div></div>
     </div>
-    <p style="font-size:13.5px;color:#dcf5e8;margin:0 0 12px">Tudo isso chega no seu WhatsApp com confirmação de leitura. Você responde de onde preferir.</p>
-    <button class="cta" style="background:#25d366">Ativar no WhatsApp</button>
+    {% if responsavel.whatsapp %}
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0">✅ Ativado! Os avisos da escola chegam no seu WhatsApp, com confirmação de leitura.</p>
+    {% else %}
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0 0 12px">Tudo isso chega no seu WhatsApp com confirmação de leitura. Você responde de onde preferir.</p>
+      <form action="/familia/whatsapp/ativar" method="post">
+        <button class="cta" style="background:#25d366" type="submit">Ativar no WhatsApp</button>
+      </form>
+    {% endif %}
   </div>
 </div>
 

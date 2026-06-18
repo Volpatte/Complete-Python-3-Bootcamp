@@ -24,7 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import ai, assistant, data, models
+from . import ai, assistant, data, models, whatsapp
 from .db import get_db
 from .seed import init_db
 from .security import autenticar
@@ -85,7 +85,10 @@ def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
 
 
 def _responsavel(user: models.Usuario) -> dict:
-    return {"nome": user.nome, "filho": user.filho_nome, "turma": user.turma, "idioma": user.idioma}
+    return {
+        "nome": user.nome, "filho": user.filho_nome, "turma": user.turma,
+        "idioma": user.idioma, "whatsapp": user.whatsapp_optin,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -242,7 +245,7 @@ def professor_enviar(
     """Envia (persiste) um comunicado de verdade — aparece no feed da família."""
     prio = ai.prioridade(titulo, corpo)
     turma_obj = next((t for t in data.TURMAS if t["nome"] == turma), None)
-    db.add(models.Comunicado(
+    comunicado = models.Comunicado(
         escola_id=user.escola_id,
         titulo=titulo,
         autor=user.nome,
@@ -254,7 +257,22 @@ def professor_enviar(
         total_familias=turma_obj["alunos"] if turma_obj else data.ESCOLA["familias"],
         leram=0,
         confirmaram=0,
-    ))
+    )
+    db.add(comunicado)
+    db.flush()
+
+    # Espelha o comunicado no WhatsApp das famílias inscritas (omnichannel).
+    familias = db.scalars(
+        select(models.Usuario).where(
+            models.Usuario.escola_id == user.escola_id,
+            models.Usuario.papel == models.FAMILIA,
+            models.Usuario.whatsapp_optin == True,  # noqa: E712
+        )
+    )
+    for fam in familias:
+        if turma == "Toda a escola" or fam.turma == turma:
+            whatsapp.enviar(db, fam, titulo, f"comunicado:{comunicado.id}")
+
     db.commit()
     return RedirectResponse("/professor?enviado=1", status_code=303)
 
@@ -373,8 +391,61 @@ def staff_conversa_enviar(
             autor_papel=user.papel, corpo=corpo.strip(), enviado_em=agora,
         ))
         conversa.atualizado_em = agora
+        # Espelha a resposta no WhatsApp da família (se inscrita).
+        familia = db.get(models.Usuario, conversa.familia_id)
+        if familia:
+            whatsapp.enviar(db, familia, f"{user.nome}: {corpo.strip()}", f"mensagem:{conversa.id}")
         db.commit()
     return RedirectResponse(f"/mensagens/{cid}", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# WhatsApp — opt-in da família + Central da coordenação
+# --------------------------------------------------------------------------- #
+@app.post("/familia/whatsapp/ativar")
+def familia_whatsapp_ativar(
+    request: Request, telefone: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    user.whatsapp_optin = True
+    if telefone.strip():
+        user.telefone = telefone.strip()
+    db.commit()
+    return RedirectResponse("/familia", status_code=303)
+
+
+@app.get("/whatsapp", response_class=HTMLResponse)
+def whatsapp_central(request: Request, db: Session = Depends(get_db), user=Depends(exigir("coordenacao"))):
+    entregas = list(
+        db.scalars(
+            select(models.EntregaWhatsApp)
+            .where(models.EntregaWhatsApp.escola_id == user.escola_id)
+            .order_by(models.EntregaWhatsApp.atualizado_em.desc())
+        )
+    )
+    total = len(entregas)
+    contagem = {s: sum(1 for e in entregas if e.status == s) for s in ("enviado", "entregue", "lido", "falhou")}
+    entregues = contagem["entregue"] + contagem["lido"]
+    taxa_entrega = round(entregues / total * 100) if total else 0
+    taxa_leitura = round(contagem["lido"] / total * 100) if total else 0
+    return templates.TemplateResponse(
+        "whatsapp.html",
+        _ctx(
+            request, user, active="wa", entregas=entregas, contagem=contagem,
+            total=total, taxa_entrega=taxa_entrega, taxa_leitura=taxa_leitura,
+            modo=whatsapp.modo(),
+        ),
+    )
+
+
+@app.post("/whatsapp/simular-leitura")
+def whatsapp_simular(request: Request, db: Session = Depends(get_db), user=Depends(exigir("coordenacao"))):
+    entregas = list(
+        db.scalars(select(models.EntregaWhatsApp).where(models.EntregaWhatsApp.escola_id == user.escola_id))
+    )
+    whatsapp.avancar_simulado(entregas)
+    db.commit()
+    return RedirectResponse("/whatsapp", status_code=303)
 
 
 @app.get("/familia/agenda", response_class=HTMLResponse)

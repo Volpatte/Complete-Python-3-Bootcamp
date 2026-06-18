@@ -42,6 +42,8 @@ class Usuario(Base):
     filho_nome: Mapped[str] = mapped_column(String(120), default="")
     turma: Mapped[str] = mapped_column(String(60), default="")
     idioma: Mapped[str] = mapped_column(String(10), default="pt-BR")
+    telefone: Mapped[str] = mapped_column(String(20), default="")
+    whatsapp_optin: Mapped[bool] = mapped_column(Boolean, default=False)
 
     escola: Mapped["Escola"] = relationship(back_populates="usuarios")
 
@@ -133,3 +135,25 @@ class Mensagem(Base):
     enviado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     conversa: Mapped["Conversa"] = relationship(back_populates="mensagens")
+
+
+class EntregaWhatsApp(Base):
+    """Registro de uma mensagem espelhada no WhatsApp + seu status de entrega/leitura.
+
+    É o coração do diferencial omnichannel: cada comunicado/mensagem enviado a uma
+    família que optou pelo WhatsApp gera uma entrega, com status rastreável
+    (enviado → entregue → lido). No modo simulado, o status é controlado na
+    Central WhatsApp; no modo real, viria dos webhooks da WhatsApp Business API.
+    """
+
+    __tablename__ = "entregas_whatsapp"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
+    destinatario_nome: Mapped[str] = mapped_column(String(120))
+    referencia: Mapped[str] = mapped_column(String(60))   # ex.: "comunicado:3", "mensagem:1"
+    resumo: Mapped[str] = mapped_column(String(140))
+    status: Mapped[str] = mapped_column(String(20), default="enviado")  # enviado|entregue|lido|falhou
+    modo: Mapped[str] = mapped_column(String(12), default="simulado")   # simulado|real
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

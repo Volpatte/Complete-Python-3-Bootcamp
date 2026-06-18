@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set active = 'wa' %}
+{% block title %}WhatsApp · Cora{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+  <div>
+    <h2 style="margin:0 0 2px">Central WhatsApp</h2>
+    <p class="muted small" style="margin:0">Entregas espelhadas no WhatsApp das famílias</p>
+  </div>
+  {% if modo == 'real' %}
+    <span class="pill green">● modo real (Meta API)</span>
+  {% else %}
+    <span class="pill amber">modo simulado</span>
+  {% endif %}
+</div>
+
+<div class="grid cols-4" style="margin-top:18px">
+  <div class="card kpi"><div class="num">{{ total }}</div><div class="lbl">mensagens enviadas</div></div>
+  <div class="card kpi"><div class="num">{{ taxa_entrega }}%</div><div class="lbl">taxa de entrega</div></div>
+  <div class="card kpi"><div class="num">{{ taxa_leitura }}%</div><div class="lbl">taxa de leitura ✓✓</div></div>
+  <div class="card kpi"><div class="num">{{ contagem.lido }}</div><div class="lbl">lidas</div></div>
+</div>
+
+<div class="ai-box" style="margin-top:18px;border-color:#bbf7d0;background:linear-gradient(135deg,#ecfdf5,#f0fdf4)">
+  <div class="head" style="color:#0d7a5f">💬 Por que WhatsApp-first</div>
+  <div class="small">No Brasil, ~99% dos pais têm WhatsApp e o abrem várias vezes ao dia — enquanto o
+  app dedicado fica fechado. A Cora usa o app como registro oficial e o <b>WhatsApp como
+  canal de entrega</b>, com confirmação de leitura (✓✓). No modo simulado, avance os status
+  abaixo para ver o fluxo; no modo real, eles vêm dos webhooks da Meta.</div>
+  <form action="/whatsapp/simular-leitura" method="post" style="margin-top:12px">
+    <button class="btn" type="submit">▶ Simular entrega/leitura</button>
+  </form>
+</div>
+
+<p class="section-title">Entregas</p>
+<div class="card">
+  <ul class="list">
+    {% for e in entregas %}
+    {% set cor = {'lido':'green','entregue':'blue','enviado':'amber','falhou':'red'}[e.status] %}
+    <li>
+      <div>
+        <strong>{{ e.destinatario_nome }}</strong>
+        <div class="muted small">{{ e.resumo }} · <span class="muted">{{ e.referencia }}</span></div>
+      </div>
+      <span class="pill {{ cor }}">
+        {% if e.status == 'lido' %}✓✓ lido{% elif e.status == 'entregue' %}✓✓ entregue{% elif e.status == 'enviado' %}✓ enviado{% else %}falhou{% endif %}
+      </span>
+    </li>
+    {% else %}
+    <li><span class="muted small">Nenhuma entrega ainda.</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
