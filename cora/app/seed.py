@@ -129,4 +129,29 @@ def _seed(db: Session) -> None:
         ),
     ])
 
+    # Ficha de saúde + medicação autorizada + uma administração registrada
+    db.add(models.FichaSaude(
+        escola_id=escola.id, usuario_id=familia.id, aluno_nome=familia.filho_nome,
+        tipo_sanguineo="O+",
+        alergias="Amendoim e frutos do mar (reação moderada).",
+        condicoes="Asma leve — pode precisar da bombinha após esforço físico.",
+        restricoes="Sem amendoim na alimentação.",
+        contato_emergencia="Juliana Prado — (48) 99999-0000",
+        convenio="Unimed — carteirinha 1234 5678",
+        observacoes="",
+    ))
+    med = models.Medicacao(
+        escola_id=escola.id, usuario_id=familia.id, aluno_nome=familia.filho_nome,
+        nome="Salbutamol (bombinha)", dosagem="2 jatos", horario="se necessário",
+        instrucoes="Em caso de falta de ar após educação física. Avisar a família.",
+        autorizado=True, ativo=True, criado_em=datetime(2026, 6, 10, 8, 0),
+    )
+    db.add(med)
+    db.flush()
+    db.add(models.AdministracaoMed(
+        medicacao_id=med.id, administrado_por="Enfermaria — Coordenação",
+        administrado_em=datetime(2026, 6, 16, 15, 20), dose="2 jatos",
+        observacao="Após a aula de Ed. Física; melhorou em 10 min.",
+    ))
+
     db.commit()

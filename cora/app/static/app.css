@@ -88,14 +88,14 @@ body.appbg {
 
 /* ---- ações rápidas (grid Nubank) ---- */
 .quick {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
   margin: -18px 16px 0; background: #fff; border-radius: 22px;
-  padding: 16px 10px; box-shadow: var(--shadow); position: relative; z-index: 2;
+  padding: 14px 8px; box-shadow: var(--shadow); position: relative; z-index: 2;
 }
-.quick a { text-align: center; color: var(--ink); font-size: 11px; font-weight: 600; }
+.quick a { text-align: center; color: var(--ink); font-size: 10px; font-weight: 600; }
 .quick .qi {
-  width: 48px; height: 48px; margin: 0 auto 6px; border-radius: 16px;
-  background: var(--surface-2); display: grid; place-items: center; font-size: 20px;
+  width: 44px; height: 44px; margin: 0 auto 5px; border-radius: 14px;
+  background: var(--surface-2); display: grid; place-items: center; font-size: 19px;
 }
 .quick a:active .qi { transform: scale(.92); }
 

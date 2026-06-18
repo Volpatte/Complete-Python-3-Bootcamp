@@ -157,3 +157,56 @@ class EntregaWhatsApp(Base):
     modo: Mapped[str] = mapped_column(String(12), default="simulado")   # simulado|real
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class FichaSaude(Base):
+    """Ficha médica do aluno (uma por família)."""
+
+    __tablename__ = "fichas_saude"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"))
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), unique=True, index=True)
+    aluno_nome: Mapped[str] = mapped_column(String(120))
+    tipo_sanguineo: Mapped[str] = mapped_column(String(8), default="")
+    alergias: Mapped[str] = mapped_column(Text, default="")
+    condicoes: Mapped[str] = mapped_column(Text, default="")          # condições crônicas / cuidados especiais
+    restricoes: Mapped[str] = mapped_column(Text, default="")         # restrições alimentares
+    contato_emergencia: Mapped[str] = mapped_column(String(160), default="")
+    convenio: Mapped[str] = mapped_column(String(120), default="")
+    observacoes: Mapped[str] = mapped_column(Text, default="")
+
+
+class Medicacao(Base):
+    """Medicação que a escola pode administrar, autorizada pela família."""
+
+    __tablename__ = "medicacoes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    aluno_nome: Mapped[str] = mapped_column(String(120))
+    nome: Mapped[str] = mapped_column(String(120))
+    dosagem: Mapped[str] = mapped_column(String(80), default="")
+    horario: Mapped[str] = mapped_column(String(80), default="")       # ex.: "se necessário", "12h"
+    instrucoes: Mapped[str] = mapped_column(Text, default="")
+    autorizado: Mapped[bool] = mapped_column(Boolean, default=True)    # família autoriza a escola
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    administracoes: Mapped[list["AdministracaoMed"]] = relationship(
+        order_by="AdministracaoMed.administrado_em.desc()", cascade="all, delete-orphan",
+        back_populates="medicacao",
+    )
+
+
+class AdministracaoMed(Base):
+    """Registro de uma administração de medicação feita pela escola."""
+
+    __tablename__ = "administracoes_med"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    medicacao_id: Mapped[int] = mapped_column(ForeignKey("medicacoes.id"), index=True)
+    administrado_por: Mapped[str] = mapped_column(String(120))
+    administrado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    dose: Mapped[str] = mapped_column(String(80), default="")
+    observacao: Mapped[str] = mapped_column(Text, default="")
+
+    medicacao: Mapped["Medicacao"] = relationship(back_populates="administracoes")

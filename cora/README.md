@@ -65,6 +65,8 @@ Usuários de demonstração (senha **`cora123`**), ou use os botões de acesso r
 - `/familia` — feed inteligente, agenda, tarefas, autorizações, respostas sugeridas
 - `/familia/assistente` — **Assistente Cora**: chat de IA que responde faltas, cardápio, agenda, tarefas e financeiro 24h (API `POST /api/assistente`)
 - `/familia/mensagens` — conversas reais com a escola; `/mensagens` (staff) — caixa de entrada do professor/coordenação. Mensageria pessoa↔pessoa persistida e bidirecional.
+- `/familia/saude` — **Saúde**: ficha médica (alergias, condições, tipo sanguíneo, contato de emergência), medicações autorizadas e histórico de administração. `/saude` (coordenação/enfermaria) — registra a administração, que avisa a família (inclusive por WhatsApp).
+- `/familia/loja` — **Loja** da escola (uniforme, material, eventos, cantina) com Pix.
 
 ### WhatsApp (omnichannel)
 

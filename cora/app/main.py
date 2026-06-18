@@ -448,6 +448,49 @@ def whatsapp_simular(request: Request, db: Session = Depends(get_db), user=Depen
     return RedirectResponse("/whatsapp", status_code=303)
 
 
+# --------------------------------------------------------------------------- #
+# Saúde — enfermaria / coordenação registra administração de medicação
+# --------------------------------------------------------------------------- #
+@app.get("/saude", response_class=HTMLResponse)
+def saude_central(request: Request, db: Session = Depends(get_db), user=Depends(exigir("coordenacao"))):
+    medicacoes = list(
+        db.scalars(select(models.Medicacao).where(
+            models.Medicacao.escola_id == user.escola_id,
+            models.Medicacao.ativo == True, models.Medicacao.autorizado == True,  # noqa: E712
+        ).order_by(models.Medicacao.aluno_nome))
+    )
+    fichas = {
+        f.usuario_id: f
+        for f in db.scalars(select(models.FichaSaude).where(models.FichaSaude.escola_id == user.escola_id))
+    }
+    return templates.TemplateResponse(
+        "staff_saude.html", _ctx(request, user, active="saude", medicacoes=medicacoes, fichas=fichas)
+    )
+
+
+@app.post("/saude/administrar/{med_id}")
+def saude_administrar(
+    request: Request, med_id: int, dose: str = Form(""), observacao: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("coordenacao")),
+):
+    med = db.get(models.Medicacao, med_id)
+    if med and med.escola_id == user.escola_id:
+        db.add(models.AdministracaoMed(
+            medicacao_id=med.id, administrado_por=user.nome, administrado_em=datetime.utcnow(),
+            dose=dose.strip() or med.dosagem, observacao=observacao.strip(),
+        ))
+        # Avisa a família pelo WhatsApp (transparência + diferencial omnichannel).
+        familia = db.get(models.Usuario, med.usuario_id)
+        if familia:
+            whatsapp.enviar(
+                db, familia,
+                f"💊 Medicação administrada: {med.nome} ({dose.strip() or med.dosagem}). Qualquer dúvida, fale conosco.",
+                f"saude:{med.id}",
+            )
+        db.commit()
+    return RedirectResponse("/saude", status_code=303)
+
+
 @app.get("/familia/agenda", response_class=HTMLResponse)
 def familia_agenda(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
     eventos = list(db.scalars(select(models.Evento).where(models.Evento.escola_id == user.escola_id).order_by(models.Evento.data)))
@@ -459,6 +502,71 @@ def familia_loja(request: Request, user=Depends(exigir("familia"))):
     return templates.TemplateResponse(
         "loja.html", _ctx(request, user, responsavel=_responsavel(user), produtos=data.LOJA)
     )
+
+
+def _ficha_da_familia(db: Session, user) -> models.FichaSaude:
+    ficha = db.scalar(select(models.FichaSaude).where(models.FichaSaude.usuario_id == user.id))
+    if ficha is None:  # cria vazia na primeira visita
+        ficha = models.FichaSaude(escola_id=user.escola_id, usuario_id=user.id, aluno_nome=user.filho_nome)
+        db.add(ficha)
+        db.commit()
+    return ficha
+
+
+@app.get("/familia/saude", response_class=HTMLResponse)
+def familia_saude(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
+    ficha = _ficha_da_familia(db, user)
+    medicacoes = list(
+        db.scalars(select(models.Medicacao).where(
+            models.Medicacao.usuario_id == user.id, models.Medicacao.ativo == True  # noqa: E712
+        ).order_by(models.Medicacao.criado_em.desc()))
+    )
+    administracoes = sorted(
+        (a for m in medicacoes for a in m.administracoes),
+        key=lambda a: a.administrado_em, reverse=True,
+    )
+    medicacoes_nome = {m.id: m.nome for m in medicacoes}
+    return templates.TemplateResponse(
+        "saude.html",
+        _ctx(request, user, responsavel=_responsavel(user), ficha=ficha,
+             medicacoes=medicacoes, administracoes=administracoes, medicacoes_nome=medicacoes_nome),
+    )
+
+
+@app.post("/familia/saude/ficha")
+def familia_saude_ficha(
+    request: Request,
+    tipo_sanguineo: str = Form(""), alergias: str = Form(""), condicoes: str = Form(""),
+    restricoes: str = Form(""), contato_emergencia: str = Form(""), convenio: str = Form(""),
+    observacoes: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    ficha = _ficha_da_familia(db, user)
+    ficha.tipo_sanguineo = tipo_sanguineo.strip()
+    ficha.alergias = alergias.strip()
+    ficha.condicoes = condicoes.strip()
+    ficha.restricoes = restricoes.strip()
+    ficha.contato_emergencia = contato_emergencia.strip()
+    ficha.convenio = convenio.strip()
+    ficha.observacoes = observacoes.strip()
+    db.commit()
+    return RedirectResponse("/familia/saude", status_code=303)
+
+
+@app.post("/familia/saude/medicacao")
+def familia_saude_medicacao(
+    request: Request,
+    nome: str = Form(...), dosagem: str = Form(""), horario: str = Form(""), instrucoes: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    if nome.strip():
+        db.add(models.Medicacao(
+            escola_id=user.escola_id, usuario_id=user.id, aluno_nome=user.filho_nome,
+            nome=nome.strip(), dosagem=dosagem.strip(), horario=horario.strip(),
+            instrucoes=instrucoes.strip(), autorizado=True, ativo=True, criado_em=datetime.utcnow(),
+        ))
+        db.commit()
+    return RedirectResponse("/familia/saude", status_code=303)
 
 
 @app.get("/familia/assistente", response_class=HTMLResponse)
