@@ -1,6 +1,5 @@
 __pycache__/
 *.pyc
 .venv/
-*.png
 *.db
 cora.db

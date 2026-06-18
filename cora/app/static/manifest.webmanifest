@@ -1,0 +1,16 @@
+{
+  "name": "Cora — escola e família",
+  "short_name": "Cora",
+  "description": "A escola do seu filho, pertinho do seu coração.",
+  "lang": "pt-BR",
+  "start_url": "/familia",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c0712",
+  "theme_color": "#ff3d71",
+  "icons": [
+    { "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

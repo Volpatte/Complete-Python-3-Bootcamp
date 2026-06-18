@@ -66,6 +66,14 @@ Usuários de demonstração (senha **`cora123`**), ou use os botões de acesso r
 - `/familia/assistente` — **Assistente Cora**: chat de IA que responde faltas, cardápio, agenda, tarefas e financeiro 24h (API `POST /api/assistente`)
 - `/familia/mensagens` — conversas reais com a escola; `/mensagens` (staff) — caixa de entrada do professor/coordenação. Mensageria pessoa↔pessoa persistida e bidirecional.
 
+### PWA (instalável no celular)
+
+O app da família é um **PWA**: tem `manifest.webmanifest`, ícones, página
+offline e um service worker (servido em `/sw.js` com escopo raiz) que faz cache
+do shell. Em HTTPS (ou `localhost`), o navegador oferece **"Adicionar à tela
+inicial"** e o app abre em tela cheia, sem barra de navegador — como um app
+nativo. Há também um botão "Instalar o app Cora" quando o navegador permite.
+
 ## Arquitetura
 
 ```

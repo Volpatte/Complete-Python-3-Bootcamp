@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}Cora · Família{% endblock %}</title>
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#ff3d71">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cora">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
 <body class="appbg">
   <div class="phone">
@@ -19,5 +26,34 @@
       <a href="/logout"><span class="ti">🚪</span>Sair</a>
     </nav>
   </div>
+
+  <button id="instalar" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
+          border:0;border-radius:999px;padding:12px 20px;font-weight:800;font-size:14px;cursor:pointer;
+          background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff;box-shadow:0 10px 30px rgba(214,51,108,.4)">
+    ⬇️ Instalar o app Cora
+  </button>
+
+  <script>
+    // Registra o service worker (escopo raiz via /sw.js).
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+    }
+    // Botão "Instalar" (Add to Home Screen) quando o navegador permite.
+    let promptInstalar = null;
+    const btn = document.getElementById("instalar");
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      promptInstalar = e;
+      btn.style.display = "block";
+    });
+    btn.addEventListener("click", async () => {
+      if (!promptInstalar) return;
+      promptInstalar.prompt();
+      await promptInstalar.userChoice;
+      promptInstalar = null;
+      btn.style.display = "none";
+    });
+    window.addEventListener("appinstalled", () => { btn.style.display = "none"; });
+  </script>
 </body>
 </html>

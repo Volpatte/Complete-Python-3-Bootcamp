@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -433,6 +433,16 @@ def familia_comunicado(request: Request, cid: int, db: Session = Depends(get_db)
             sugestoes=ai.sugestoes_resposta(c.categoria, c.precisa_confirmar),
             traducao=ai.traduzir_rotulo(user.idioma),
         ),
+    )
+
+
+@app.get("/sw.js")
+def service_worker():
+    """Serve o service worker da raiz para que seu escopo cubra todo o app."""
+    return FileResponse(
+        BASE_DIR / "static" / "sw.js",
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
     )
 
 
