@@ -38,6 +38,17 @@ Com a chave ativa: resumo abstrativo dos comunicados, insight analítico para a
 coordenação e o **Assistente Cora** respondendo em linguagem natural, ancorado
 nos dados reais do aluno (faltas, cardápio, agenda, financeiro).
 
+### Testes automatizados
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+A suíte (`tests/`) cobre autenticação/controle de acesso, comunicados +
+leitura, mensageria bidirecional, WhatsApp, saúde (ficha/medicação/administração)
+e PWA — rodando contra um banco SQLite temporário e isolado.
+
 ### Banco de dados e login
 
 O app já tem **persistência (SQLAlchemy)** e **autenticação por sessão com papéis**.
