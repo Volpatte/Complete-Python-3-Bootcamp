@@ -282,7 +282,17 @@
     "Não é possível desativar o último administrador ativo.": "You can't deactivate the last active administrator.",
     "Secretaria": "Front office",
     "Você": "You",
-    "Nenhuma família cadastrada ainda.": "No families registered yet."
+    "Nenhuma família cadastrada ainda.": "No families registered yet.",
+    "Alunos": "Students",
+    "Matrícula": "Enrollment ID",
+    "Matrícula (deixe em branco para gerar)": "Enrollment ID (leave blank to auto-generate)",
+    "Responsável": "Guardian",
+    "Responsável (família)": "Guardian (family)",
+    "Sem vínculo": "No link",
+    "Criar aluno": "Create student",
+    "Nenhum aluno cadastrado ainda.": "No students registered yet.",
+    "Lista de alunos atualizada.": "Student list updated.",
+    "Meus filhos": "My children"
   },
   "es": {
     "Oi,": "Hola,",
@@ -567,6 +577,16 @@
     "Não é possível desativar o último administrador ativo.": "No puedes desactivar al último administrador activo.",
     "Secretaria": "Secretaría",
     "Você": "Tú",
-    "Nenhuma família cadastrada ainda.": "Aún no hay familias registradas."
+    "Nenhuma família cadastrada ainda.": "Aún no hay familias registradas.",
+    "Alunos": "Alumnos",
+    "Matrícula": "Matrícula",
+    "Matrícula (deixe em branco para gerar)": "Matrícula (deja en blanco para generar)",
+    "Responsável": "Responsable",
+    "Responsável (família)": "Responsable (familia)",
+    "Sem vínculo": "Sin vínculo",
+    "Criar aluno": "Crear alumno",
+    "Nenhum aluno cadastrado ainda.": "Aún no hay alumnos registrados.",
+    "Lista de alunos atualizada.": "Lista de alumnos actualizada.",
+    "Meus filhos": "Mis hijos"
   }
 }

@@ -115,6 +115,20 @@ def _seed(db: Session) -> None:
         extras.append((u, perfil))
     db.flush()
 
+    # --- Roster de alunos (aluno ↔ turma ↔ responsável) ---
+    ano = data.HOJE.year
+    alunos_seed = [
+        (familia, "Pedro Prado", "5º Ano A"),
+        (familia, "Laura Prado", "Infantil II"),  # 2º filho → demonstra múltiplos filhos
+    ]
+    for u, _perfil in extras:
+        alunos_seed.append((u, u.filho_nome, u.turma))
+    for i, (resp, nome_al, turma_al) in enumerate(alunos_seed, start=1):
+        db.add(models.Aluno(
+            escola_id=escola.id, nome=nome_al, matricula=f"{ano}{i:04d}",
+            turma=turma_al, responsavel_id=resp.id, ativo=True,
+        ))
+
     leram = {c.id: 0 for c in coms_objs}
     total = {c.id: 0 for c in coms_objs}
     for u, perfil in extras:

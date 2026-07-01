@@ -81,3 +81,47 @@ def test_direcao_acessa_admin():
     c = TestClient(app)
     c.get("/login/demo/direcao")
     assert c.get("/admin").status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Roster de alunos
+# --------------------------------------------------------------------------- #
+def _aluno(nome: str):
+    with SessionLocal() as db:
+        return db.scalar(select(models.Aluno).where(models.Aluno.nome == nome))
+
+
+def test_roster_semeado(coord):
+    html = coord.get("/admin").text
+    assert "Pedro Prado" in html and "Laura Prado" in html  # família demo tem 2 filhos
+
+
+def test_criar_aluno_gera_matricula(coord):
+    coord.post("/admin/aluno", data={"nome": "Aluno Novo", "turma": "5º Ano A"})
+    a = _aluno("Aluno Novo")
+    assert a is not None and a.matricula.startswith("2026")
+
+
+def test_criar_aluno_vinculado_a_familia(coord):
+    fid = _uid("familia@cora.app")
+    coord.post("/admin/aluno", data={"nome": "Filho Vinc", "turma": "3º Ano A", "responsavel_id": str(fid)})
+    assert _aluno("Filho Vinc").responsavel_id == fid
+
+
+def test_familia_ve_seus_filhos(familia):
+    html = familia.get("/familia").text
+    assert "Laura Prado" in html  # 2º filho surge no bloco "Meus filhos"
+
+
+def test_toggle_aluno(coord):
+    coord.post("/admin/aluno", data={"nome": "Toggle Al", "turma": "5º Ano A"})
+    a = _aluno("Toggle Al")
+    assert a.ativo
+    coord.post(f"/admin/aluno/{a.id}/status")
+    assert not _aluno("Toggle Al").ativo
+
+
+def test_professor_nao_cria_aluno(professor):
+    r = professor.post("/admin/aluno", data={"nome": "Hack", "turma": "5º Ano A"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
+    assert _aluno("Hack") is None

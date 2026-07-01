@@ -20,6 +20,18 @@
   <a href="#tarefas"><div class="qi">📚</div>{{ t("Tarefas") }}</a>
 </div>
 
+{% if filhos %}
+<div class="sec-h pad" style="margin-top:16px"><h2>{{ t("Meus filhos") }}</h2></div>
+<div class="pad"><div class="list2">
+  {% for al in filhos %}
+  <div class="it">
+    <div><div class="l">{{ al.nome }}</div><div class="s">{{ t(al.turma) }} · {{ t("Matrícula") }} {{ al.matricula }}</div></div>
+    <span class="tag">🎒</span>
+  </div>
+  {% endfor %}
+</div></div>
+{% endif %}
+
 <div class="sec-h pad" style="margin-top:18px"><h2>{{ t("Hoje na escola") }}</h2><a href="#">{{ t("ver tudo") }}</a></div>
 <div class="stories">
   <div class="story"><div class="ring"><div>📸</div></div><span>{{ t("Mural") }}</span></div>

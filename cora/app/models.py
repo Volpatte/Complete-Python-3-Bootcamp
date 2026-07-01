@@ -59,6 +59,25 @@ class Usuario(Base):
     escola: Mapped["Escola"] = relationship(back_populates="usuarios")
 
 
+class Aluno(Base):
+    """Aluno matriculado — o roster da escola.
+
+    Vincula aluno ↔ turma ↔ responsável (família). Uma família pode ter vários
+    alunos (múltiplos filhos); um aluno pode existir sem responsável vinculado
+    (ex.: importado antes de a família criar conta).
+    """
+
+    __tablename__ = "alunos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    nome: Mapped[str] = mapped_column(String(120))
+    matricula: Mapped[str] = mapped_column(String(30), default="", index=True)
+    turma: Mapped[str] = mapped_column(String(60), default="")
+    responsavel_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True, index=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Comunicado(Base):
     __tablename__ = "comunicados"
     id: Mapped[int] = mapped_column(primary_key=True)

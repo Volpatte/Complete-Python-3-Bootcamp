@@ -181,12 +181,21 @@ def admin_home(
     db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
 ):
     usuarios = _usuarios_da_escola(db, user.escola_id)
+    familias = [u for u in usuarios if u.papel == models.FAMILIA]
+    alunos = list(
+        db.scalars(
+            select(models.Aluno)
+            .where(models.Aluno.escola_id == user.escola_id)
+            .order_by(models.Aluno.turma, models.Aluno.nome)
+        )
+    )
     return templates.TemplateResponse(
         "admin.html",
         _ctx(
             request, user, active="admin",
             equipe=[u for u in usuarios if u.papel in models.PAPEIS_STAFF],
-            familias=[u for u in usuarios if u.papel == models.FAMILIA],
+            familias=familias,
+            alunos=alunos, resp_nomes={u.id: u.nome for u in familias},
             papeis=models.PAPEIS_CRIAVEIS, turmas=data.TURMAS,
             nova_senha=nova_senha, nome_reset=nome_reset, msg=msg, erro=erro,
         ),
@@ -265,6 +274,51 @@ def admin_toggle_status(
     alvo.ativo = not alvo.ativo
     db.commit()
     return RedirectResponse("/admin?msg=status", status_code=303)
+
+
+def _gerar_matricula(db: Session, escola_id: int) -> str:
+    """Matrícula sequencial no formato AAAA#### (ano + ordem na escola)."""
+    ano = data.HOJE.year
+    seq = db.scalar(
+        select(func.count()).select_from(models.Aluno).where(models.Aluno.escola_id == escola_id)
+    ) or 0
+    return f"{ano}{seq + 1:04d}"
+
+
+@app.post("/admin/aluno")
+def admin_criar_aluno(
+    request: Request,
+    nome: str = Form(...), turma: str = Form(""), matricula: str = Form(""),
+    responsavel_id: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    nome = nome.strip()
+    if not nome:
+        return RedirectResponse("/admin?erro=dados", status_code=303)
+    resp_id = int(responsavel_id) if responsavel_id.strip().isdigit() else None
+    if resp_id is not None:  # o responsável precisa ser uma família da mesma escola
+        resp = db.get(models.Usuario, resp_id)
+        if not resp or resp.escola_id != user.escola_id or resp.papel != models.FAMILIA:
+            resp_id = None
+    db.add(models.Aluno(
+        escola_id=user.escola_id, nome=nome, turma=turma.strip(),
+        matricula=matricula.strip() or _gerar_matricula(db, user.escola_id),
+        responsavel_id=resp_id, ativo=True,
+    ))
+    db.commit()
+    return RedirectResponse("/admin?msg=aluno", status_code=303)
+
+
+@app.post("/admin/aluno/{aid}/status")
+def admin_toggle_aluno(
+    request: Request, aid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    aluno = db.get(models.Aluno, aid)
+    if aluno and aluno.escola_id == user.escola_id:
+        aluno.ativo = not aluno.ativo
+        db.commit()
+    return RedirectResponse("/admin?msg=aluno", status_code=303)
 
 
 # --------------------------------------------------------------------------- #
@@ -478,6 +532,11 @@ def familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir
             tarefas=tarefas,
             eventos=list(db.scalars(select(models.Evento).where(models.Evento.escola_id == user.escola_id).order_by(models.Evento.data))),
             autorizacoes=list(db.scalars(select(models.Autorizacao).where(models.Autorizacao.usuario_id == user.id))),
+            filhos=list(db.scalars(
+                select(models.Aluno).where(
+                    models.Aluno.responsavel_id == user.id, models.Aluno.ativo.is_(True)
+                ).order_by(models.Aluno.nome)
+            )),
         ),
     )
 
