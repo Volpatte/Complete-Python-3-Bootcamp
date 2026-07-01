@@ -43,6 +43,34 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.filters["dia"] = lambda d: d.strftime("%d/%m")
 templates.env.filters["data_hora"] = lambda d: d.strftime("%d/%m %H:%M")
 
+
+def _reais(centavos: int) -> str:
+    """Formata centavos como moeda brasileira: 148000 -> 'R$ 1.480,00'."""
+    s = f"{(centavos or 0) / 100:,.2f}"  # '1,480.00'
+    return "R$ " + s.replace(",", "·").replace(".", ",").replace("·", ".")
+
+
+def _centavos(texto: str) -> int:
+    """Converte um valor digitado (R$ 1.480,00 / 1480.00 / 1.480 / 1480) em centavos."""
+    s = "".join(ch for ch in (texto or "") if ch.isdigit() or ch in ".,")
+    if "," in s and "." in s:
+        s = (s.replace(".", "").replace(",", ".") if s.rfind(",") > s.rfind(".") else s.replace(",", ""))
+    elif "," in s:
+        s = s.replace(",", ".")
+    elif "." in s:
+        # Sem vírgula: '.' é separador de milhar (não decimal) quando há mais de
+        # um ponto ou 3 dígitos após o último — ex.: "1.480" → 1480, mas "10.50" → 10,50.
+        _, _, frac = s.rpartition(".")
+        if s.count(".") > 1 or len(frac) == 3:
+            s = s.replace(".", "")
+    try:
+        return round(float(s) * 100)
+    except ValueError:
+        return 0
+
+
+templates.env.filters["reais"] = _reais
+
 # Cria as tabelas e faz o seed na carga do app (idempotente).
 init_db()
 
@@ -63,8 +91,12 @@ async def _handle_redirect(request: Request, exc: Redirecionar):
 def _home_do(papel: str) -> str:
     return {
         "coordenacao": "/coordenacao", "professor": "/professor", "familia": "/familia",
-        "direcao": "/admin", "secretaria": "/admin", "financeiro": "/admin",
+        "direcao": "/admin", "secretaria": "/admin", "financeiro": "/financeiro",
     }.get(papel, "/")
+
+
+# Papéis que enxergam o painel financeiro da escola.
+PAPEIS_FINANCEIRO = (models.FINANCEIRO, models.COORDENACAO, models.DIRECAO)
 
 
 def exigir(*papeis: str):
@@ -88,6 +120,7 @@ def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
         "request": request, "escola": data.ESCOLA, "ai": ai, "user": user,
         "lang": lang, "t": i18n.translator(lang), "langs": i18n.LANGS,
         "is_admin": bool(user and user.papel in models.PAPEIS_ADMIN),
+        "pode_financeiro": bool(user and user.papel in PAPEIS_FINANCEIRO),
     }
     base.update(extra)
     return base
@@ -440,6 +473,114 @@ async def admin_importar(
         f"/admin?msg=import&imp_alunos={n_alunos}&imp_familias={n_familias}&imp_erros={n_erros}",
         status_code=303,
     )
+
+
+# --------------------------------------------------------------------------- #
+# Financeiro — painel da escola + portal da família
+# --------------------------------------------------------------------------- #
+@app.get("/financeiro", response_class=HTMLResponse)
+def financeiro_central(
+    request: Request, msg: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    hoje = data.HOJE
+    cobrancas = list(
+        db.scalars(
+            select(models.Cobranca)
+            .where(models.Cobranca.escola_id == user.escola_id)
+            .order_by(models.Cobranca.vencimento.desc())
+        )
+    )
+    recebido = sum(c.valor_centavos for c in cobrancas if c.status == "pago")
+    a_receber = sum(c.valor_centavos for c in cobrancas if c.status != "pago")
+    vencido = sum(c.valor_centavos for c in cobrancas if c.status != "pago" and c.vencimento < hoje)
+    usuarios = _usuarios_da_escola(db, user.escola_id)
+    return templates.TemplateResponse(
+        "financeiro.html",
+        _ctx(
+            request, user, active="financeiro", hoje=hoje, cobrancas=cobrancas,
+            recebido=recebido, a_receber=a_receber, vencido=vencido,
+            familias=[u for u in usuarios if u.papel == models.FAMILIA],
+            responsaveis={u.id: u.nome for u in usuarios},
+            turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True),
+            msg=msg,
+        ),
+    )
+
+
+@app.post("/financeiro/cobranca")
+def financeiro_lancar(
+    request: Request,
+    descricao: str = Form(...), valor: str = Form(...), vencimento: str = Form(""),
+    alvo: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    descricao = descricao.strip()
+    centavos = _centavos(valor)
+    if not descricao or centavos <= 0 or not alvo:
+        return RedirectResponse("/financeiro?msg=erro", status_code=303)
+    try:
+        venc = date.fromisoformat(vencimento) if vencimento else data.HOJE
+    except ValueError:
+        venc = data.HOJE
+
+    def _lancar(uid: int, aluno_nome: str):
+        db.add(models.Cobranca(
+            escola_id=user.escola_id, usuario_id=uid, aluno_nome=aluno_nome,
+            descricao=descricao, valor_centavos=centavos, vencimento=venc, status="aberto",
+        ))
+
+    if alvo.startswith("turma:"):
+        tnome = alvo[len("turma:"):]
+        alunos = db.scalars(select(models.Aluno).where(
+            models.Aluno.escola_id == user.escola_id, models.Aluno.turma == tnome,
+            models.Aluno.ativo.is_(True), models.Aluno.responsavel_id.is_not(None),
+        ))
+        vistos: dict[int, str] = {}
+        for al in alunos:
+            vistos.setdefault(al.responsavel_id, al.nome)
+        for uid, aluno_nome in vistos.items():
+            _lancar(uid, aluno_nome)
+    elif alvo.startswith("familia:") and alvo[len("familia:"):].isdigit():
+        u = db.get(models.Usuario, int(alvo[len("familia:"):]))
+        if u and u.escola_id == user.escola_id and u.papel == models.FAMILIA:
+            _lancar(u.id, u.filho_nome)
+    db.commit()
+    return RedirectResponse("/financeiro?msg=lancado", status_code=303)
+
+
+@app.get("/familia/financeiro", response_class=HTMLResponse)
+def familia_financeiro(
+    request: Request, pago: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    cobrancas = list(
+        db.scalars(
+            select(models.Cobranca)
+            .where(models.Cobranca.usuario_id == user.id)
+            .order_by(models.Cobranca.vencimento.desc())
+        )
+    )
+    total_aberto = sum(c.valor_centavos for c in cobrancas if c.status != "pago")
+    return templates.TemplateResponse(
+        "familia_financeiro.html",
+        _ctx(
+            request, user, responsavel=_responsavel(user), hoje=data.HOJE,
+            cobrancas=cobrancas, total_aberto=total_aberto, pago=pago,
+        ),
+    )
+
+
+@app.post("/familia/financeiro/{cid}/pagar")
+def familia_pagar(
+    request: Request, cid: int,
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    c = db.get(models.Cobranca, cid)
+    if c and c.usuario_id == user.id and c.status != "pago":
+        c.status, c.metodo, c.pago_em = "pago", "Pix", datetime.utcnow()
+        db.commit()
+    return RedirectResponse("/familia/financeiro?pago=1", status_code=303)
 
 
 # --------------------------------------------------------------------------- #

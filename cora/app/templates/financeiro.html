@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Cora · {{ t("Financeiro") }}{% endblock %}
+{% block content %}
+
+<div class="hero" style="text-align:left;padding:24px 0 6px">
+  <h1 style="font-size:30px;margin:0 0 6px">{{ t("Financeiro da escola") }}</h1>
+  <p style="color:var(--muted);margin:0;font-size:16px">{{ t("Lance mensalidades e acompanhe recebimentos e inadimplência.") }}</p>
+</div>
+
+{% if msg == 'lancado' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Cobrança(s) lançada(s).") }}</div></div>
+{% elif msg == 'erro' %}
+<div class="ai-box" style="border-color:#fecaca;background:#fef2f2"><div class="head" style="color:#dc2626">⚠️ {{ t("Preencha descrição, valor e destino.") }}</div></div>
+{% endif %}
+
+{# ---- KPIs ---- #}
+<div class="grid cols-3">
+  <div class="card kpi"><div class="lbl">{{ t("A receber") }}</div><div class="num" style="color:var(--amber)">{{ a_receber|reais }}</div></div>
+  <div class="card kpi"><div class="lbl">{{ t("Recebido") }}</div><div class="num" style="color:var(--green)">{{ recebido|reais }}</div></div>
+  <div class="card kpi"><div class="lbl">{{ t("Vencido") }}</div><div class="num" style="color:var(--red)">{{ vencido|reais }}</div></div>
+</div>
+
+{# ---- lançar cobrança ---- #}
+<p class="section-title">{{ t("Lançar cobrança") }}</p>
+<div class="card">
+  <form action="/financeiro/cobranca" method="post">
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Descrição") }}</label>
+        <input name="descricao" required placeholder="{{ t('Ex.: Mensalidade de julho') }}">
+      </div>
+      <div>
+        <label>{{ t("Valor") }}</label>
+        <input name="valor" required placeholder="R$ 1.480,00">
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Vencimento") }}</label>
+        <input name="vencimento" type="date">
+      </div>
+      <div>
+        <label>{{ t("Destino") }}</label>
+        <select name="alvo">
+          <optgroup label="{{ t('Famílias') }}">
+            {% for f in familias %}<option value="familia:{{ f.id }}">{{ f.nome }}</option>{% endfor %}
+          </optgroup>
+          <optgroup label="{{ t('Turmas') }}">
+            {% for tu in turmas %}<option value="turma:{{ tu.nome }}">{{ t("Turma") }}: {{ tu.nome }}</option>{% endfor %}
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px">{{ t("Lançar") }}</button>
+  </form>
+</div>
+
+{# ---- cobranças ---- #}
+<p class="section-title">{{ t("Cobranças") }} · {{ cobrancas|length }}</p>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Família") }}</th>
+      <th style="padding:12px 16px">{{ t("Descrição") }}</th>
+      <th style="padding:12px 16px">{{ t("Valor") }}</th>
+      <th style="padding:12px 16px">{{ t("Vencimento") }}</th>
+      <th style="padding:12px 16px">{{ t("Status") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for c in cobrancas %}
+      {% set eff = 'pago' if c.status == 'pago' else ('vencido' if c.vencimento < hoje else 'aberto') %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px"><div style="font-weight:700">{{ responsaveis.get(c.usuario_id, '—') }}</div><div class="muted small">{{ c.aluno_nome }}</div></td>
+        <td style="padding:12px 16px">{{ t(c.descricao) }}</td>
+        <td style="padding:12px 16px;font-weight:700">{{ c.valor_centavos|reais }}</td>
+        <td style="padding:12px 16px">{{ c.vencimento|dia }}</td>
+        <td style="padding:12px 16px">
+          {% if eff == 'pago' %}<span class="pill green">● {{ t("Pago") }}</span>
+          {% elif eff == 'vencido' %}<span class="pill red">● {{ t("Vencido") }}</span>
+          {% else %}<span class="pill amber">● {{ t("Em aberto") }}</span>{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" style="padding:16px;color:var(--muted)">{{ t("Nenhuma cobrança ainda.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -138,6 +138,25 @@ def _seed(db: Session) -> None:
             turma=turma_al, responsavel_id=resp.id, ativo=True,
         ))
 
+    # --- Cobranças (financeiro real) ---
+    MENS = 148000  # R$ 1.480,00
+    cobrs = [
+        (familia, "Pedro Prado", "Mensalidade de maio", MENS, data.HOJE - timedelta(days=30), "pago"),
+        (familia, "Pedro Prado", "Mensalidade de junho", MENS, data.HOJE + timedelta(days=3), "aberto"),
+        (familia, "Pedro Prado", "Material didático — 2º semestre", 24000, data.HOJE - timedelta(days=5), "aberto"),
+    ]
+    for idx, (u, _perfil) in enumerate(extras):
+        cobrs.append((u, u.filho_nome, "Mensalidade de junho", MENS, data.HOJE + timedelta(days=3), "aberto"))
+        if idx % 2 == 0:  # metade também com uma cobrança vencida
+            cobrs.append((u, u.filho_nome, "Material didático — 2º semestre", 24000, data.HOJE - timedelta(days=4), "aberto"))
+    for u, aluno_nome, desc, valor, venc, status in cobrs:
+        db.add(models.Cobranca(
+            escola_id=escola.id, usuario_id=u.id, aluno_nome=aluno_nome,
+            descricao=desc, valor_centavos=valor, vencimento=venc, status=status,
+            metodo="Pix" if status == "pago" else "",
+            pago_em=datetime.combine(venc - timedelta(days=2), time(10, 0)) if status == "pago" else None,
+        ))
+
     leram = {c.id: 0 for c in coms_objs}
     total = {c.id: 0 for c in coms_objs}
     for u, perfil in extras:

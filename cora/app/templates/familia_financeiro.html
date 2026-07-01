@@ -1,0 +1,52 @@
+{% extends "app_shell.html" %}
+{% set tab = 'inicio' %}
+{% block title %}Cora · {{ t("Financeiro") }}{% endblock %}
+{% block screen %}
+
+<header class="app-head">
+  <div class="row">
+    <a href="/familia" style="color:#fff;text-decoration:none;font-size:22px">‹</a>
+    <button class="icon-btn">💳</button>
+  </div>
+  <h1>{{ t("Financeiro") }}</h1>
+  <p class="sub">{{ t("Total em aberto") }}: <b>{{ total_aberto|reais }}</b></p>
+</header>
+
+{% if pago %}
+<div class="pad" style="margin-top:14px">
+  <div class="post" style="background:linear-gradient(135deg,#0d3b2e,#0f5132);color:#fff">
+    <div style="font-weight:800">✅ {{ t("Pagamento confirmado via Pix!") }}</div>
+    <div style="font-size:13px;color:#dcf5e8;margin-top:4px">{{ t("O comprovante foi enviado para o seu e-mail.") }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="pad" style="margin-top:14px">
+  {% for c in cobrancas %}
+    {% set eff = 'pago' if c.status == 'pago' else ('vencido' if c.vencimento < hoje else 'aberto') %}
+    <div class="post">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <div style="font-weight:800">{{ t(c.descricao) }}</div>
+          <div class="muted small">{{ c.aluno_nome }} · {{ t("vence") }} {{ c.vencimento|dia }}</div>
+        </div>
+        <div style="font-weight:800;font-size:16px;white-space:nowrap">{{ c.valor_centavos|reais }}</div>
+      </div>
+      {% if eff == 'pago' %}
+        <span class="tag green" style="margin-top:10px">✅ {{ t("Pago") }} · {{ c.metodo }}</span>
+      {% else %}
+        {% if eff == 'vencido' %}<span class="tag red" style="margin-top:10px">⏰ {{ t("Vencido") }}</span>{% endif %}
+        <form action="/familia/financeiro/{{ c.id }}/pagar" method="post" style="margin-top:10px">
+          <button class="cta" type="submit">{{ t("Pagar via Pix") }}</button>
+        </form>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="post" style="text-align:center">
+      <div style="font-size:32px">🎉</div>
+      <div style="font-weight:700;margin-top:6px">{{ t("Você está em dia!") }}</div>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
