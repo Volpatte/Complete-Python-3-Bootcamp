@@ -12,6 +12,9 @@ E no template:  {{ t("Entrar") }}
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from starlette.requests import Request
 
 DEFAULT = "pt"
@@ -91,6 +94,13 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "E-mail ou senha incorretos. Tente novamente.": "Incorrect email or password. Please try again.",
         "Acesso rápido para demonstração (senha:": "Quick demo access (password:",
         "Coordenação": "Coordination",
+        # ---- navegação / shells (base + app_shell) ----
+        "Mensagens": "Messages",
+        "Saúde": "Health",
+        "Início": "Home",
+        "Agenda": "Calendar",
+        "Falar com a Cora IA": "Talk to Cora AI",
+        "Instalar o app Cora": "Install the Cora app",
     },
     "es": {
         # ---- topo / navegação ----
@@ -162,8 +172,26 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "E-mail ou senha incorretos. Tente novamente.": "Correo o contraseña incorrectos. Inténtalo de nuevo.",
         "Acesso rápido para demonstração (senha:": "Acceso rápido de demostración (contraseña:",
         "Coordenação": "Coordinación",
+        # ---- navegação / shells (base + app_shell) ----
+        "Mensagens": "Mensajes",
+        "Saúde": "Salud",
+        "Início": "Inicio",
+        "Agenda": "Agenda",
+        "Falar com a Cora IA": "Hablar con Cora IA",
+        "Instalar o app Cora": "Instalar la app Cora",
     },
 }
+
+
+# Mescla as traduções das telas internas (geradas em app/translations.json).
+# Mantém as chaves inline acima como base; o JSON complementa/atualiza.
+_JSON_PATH = Path(__file__).resolve().parent / "translations.json"
+try:
+    _extra = json.loads(_JSON_PATH.read_text(encoding="utf-8"))
+    for _lang, _table in _extra.items():
+        TRANSLATIONS.setdefault(_lang, {}).update(_table)
+except FileNotFoundError:
+    pass
 
 
 def normalize(code: str | None) -> str:

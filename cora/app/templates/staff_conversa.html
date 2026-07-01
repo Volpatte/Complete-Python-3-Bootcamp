@@ -2,9 +2,9 @@
 {% set active = 'msg' %}
 {% block title %}{{ conversa.canal }} · Cora{% endblock %}
 {% block content %}
-<a href="/mensagens" class="small muted">← voltar às mensagens</a>
+<a href="/mensagens" class="small muted">← {{ t("voltar às mensagens") }}</a>
 <h2 style="margin:8px 0 2px">{{ conversa.canal }}</h2>
-<p class="muted small">Conversa com a família</p>
+<p class="muted small">{{ t("Conversa com a família") }}</p>
 
 <div class="card" style="margin-top:14px">
   <div style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto">
@@ -18,14 +18,14 @@
         <div style="font-size:10px;opacity:.7;margin-top:4px">{{ m.enviado_em|data_hora }}</div>
       </div>
     {% else %}
-      <p class="muted small">Nenhuma mensagem ainda.</p>
+      <p class="muted small">{{ t("Nenhuma mensagem ainda.") }}</p>
     {% endfor %}
   </div>
 
   <form method="post" action="/mensagens/{{ conversa.id }}/enviar" style="display:flex;gap:10px;margin-top:14px">
-    <input name="corpo" placeholder="Escreva uma resposta…" required
+    <input name="corpo" placeholder="{{ t('Escreva uma resposta…') }}" required
            style="flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit">
-    <button class="btn" type="submit">Enviar</button>
+    <button class="btn" type="submit">{{ t("Enviar") }}</button>
   </form>
 </div>
 {% endblock %}

@@ -5,10 +5,10 @@
 
 <header class="app-head">
   <div class="row">
-    <h1 style="margin:0">🛍️ Loja da escola</h1>
+    <h1 style="margin:0">🛍️ {{ t("Loja da escola") }}</h1>
     <button class="icon-btn">🛒</button>
   </div>
-  <p class="sub" style="margin-top:6px">Uniforme, material, eventos e cantina — pague no Pix</p>
+  <p class="sub" style="margin-top:6px">{{ t("Uniforme, material, eventos e cantina — pague no Pix") }}</p>
 </header>
 
 <div class="pad" style="margin-top:18px">
@@ -19,7 +19,7 @@
       <span class="tag blue">{{ p.tag }}</span>
       <div style="font-weight:800;font-size:14px;margin:6px 0 2px;line-height:1.25">{{ p.nome }}</div>
       <div style="font-weight:800;color:var(--grape);font-size:16px;margin-bottom:10px">{{ p.preco }}</div>
-      <button class="cta" style="padding:11px;font-size:13px" data-nome="{{ p.nome }}" onclick="comprar(this)">Comprar via Pix</button>
+      <button class="cta" style="padding:11px;font-size:13px" data-nome="{{ p.nome }}" onclick="comprar(this)">{{ t("Comprar via Pix") }}</button>
     </div>
     {% endfor %}
   </div>
@@ -27,7 +27,7 @@
 
 <div id="toast" style="position:absolute;left:50%;transform:translateX(-50%);bottom:118px;z-index:60;
      background:#0d7a5f;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:13px;
-     box-shadow:0 12px 28px rgba(0,0,0,.3);display:none">Pedido registrado ✓</div>
+     box-shadow:0 12px 28px rgba(0,0,0,.3);display:none">{{ t("Pedido registrado") }} ✓</div>
 
 <style>
   .grid-loja { display:grid; grid-template-columns:1fr 1fr; gap:12px; }

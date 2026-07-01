@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>{% block title %}Cora · Família{% endblock %}</title>
+  <title>{% block title %}Cora · {{ t("Família") }}{% endblock %}</title>
   <link rel="stylesheet" href="/static/app.css">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta name="theme-color" content="#ff3d71">
@@ -17,25 +17,32 @@
   <div class="phone">
     <div class="notch"></div>
     <div class="screen">
+      <div class="langbar" style="display:flex; justify-content:flex-end; gap:3px; padding:8px 14px 0">
+        {% for code, label in langs.items() %}
+        <a href="/lang/{{ code }}" style="font-size:11px; font-weight:800; letter-spacing:.02em;
+           padding:4px 9px; border-radius:999px; text-decoration:none;
+           {% if code == lang %}background:#ff3d71; color:#fff{% else %}background:rgba(0,0,0,.05); color:#98838d{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
       {% block screen %}{% endblock %}
     </div>
-    <a href="/familia/assistente" class="fab-cora" aria-label="Falar com a Cora IA">
+    <a href="/familia/assistente" class="fab-cora" aria-label="{{ t('Falar com a Cora IA') }}">
       <span class="fab-ico">🤖</span>
       <span class="fab-txt">Cora IA</span>
     </a>
 
     <nav class="tabbar">
-      <a href="/familia" class="{{ 'active' if tab=='inicio' }}"><span class="ti">🏠</span>Início</a>
-      <a href="/familia/mensagens" class="{{ 'active' if tab=='msg' }}"><span class="ti">💬</span>Mensagens</a>
-      <a href="/familia/agenda" class="{{ 'active' if tab=='agenda' }}"><span class="ti">📅</span>Agenda</a>
-      <a href="/logout"><span class="ti">🚪</span>Sair</a>
+      <a href="/familia" class="{{ 'active' if tab=='inicio' }}"><span class="ti">🏠</span>{{ t("Início") }}</a>
+      <a href="/familia/mensagens" class="{{ 'active' if tab=='msg' }}"><span class="ti">💬</span>{{ t("Mensagens") }}</a>
+      <a href="/familia/agenda" class="{{ 'active' if tab=='agenda' }}"><span class="ti">📅</span>{{ t("Agenda") }}</a>
+      <a href="/logout"><span class="ti">🚪</span>{{ t("Sair") }}</a>
     </nav>
   </div>
 
   <button id="instalar" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
           border:0;border-radius:999px;padding:12px 20px;font-weight:800;font-size:14px;cursor:pointer;
           background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff;box-shadow:0 10px 30px rgba(214,51,108,.4)">
-    ⬇️ Instalar o app Cora
+    ⬇️ {{ t("Instalar o app Cora") }}
   </button>
 
   <script>

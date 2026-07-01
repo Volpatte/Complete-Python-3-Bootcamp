@@ -1,11 +1,11 @@
 {% extends "app_shell.html" %}
 {% set tab = 'msg' %}
-{% block title %}Cora · Mensagens{% endblock %}
+{% block title %}Cora · {{ t("Mensagens") }}{% endblock %}
 {% block screen %}
 
 <header class="app-head">
   <div class="row">
-    <h1 style="margin:0">Mensagens</h1>
+    <h1 style="margin:0">{{ t("Mensagens") }}</h1>
     <button class="icon-btn">✎</button>
   </div>
   <p class="sub" style="margin-top:6px">{{ responsavel.filho }} · {{ responsavel.turma }}</p>
@@ -15,14 +15,14 @@
   <a class="post" href="/familia/assistente" style="display:flex;gap:12px;align-items:center;border-left:4px solid #25d366">
     <div class="pin" style="background:#25d366;flex:0 0 auto">🤖</div>
     <div style="flex:1">
-      <div class="who">Assistente Cora (IA)</div>
-      <div class="when">responde faltas, cardápio, agenda e boletos 24h</div>
+      <div class="who">{{ t("Assistente Cora (IA)") }}</div>
+      <div class="when">{{ t("responde faltas, cardápio, agenda e boletos 24h") }}</div>
     </div>
     <span class="tag green">IA</span>
   </a>
 </div>
 
-<div class="sec-h pad" style="margin-top:6px"><h2>Conversas</h2></div>
+<div class="sec-h pad" style="margin-top:6px"><h2>{{ t("Conversas") }}</h2></div>
 <div class="pad"><div class="list2">
   {% for c in conversas %}
     {% set ultima = c.mensagens[-1] if c.mensagens else None %}
@@ -32,11 +32,11 @@
       </div>
       <div class="body">
         <div class="n">{{ c.canal }} <span>{{ c.atualizado_em|data_hora }}</span></div>
-        <div class="p">{{ ultima.corpo if ultima else 'Inicie a conversa' }}</div>
+        <div class="p">{{ ultima.corpo if ultima else t("Inicie a conversa") }}</div>
       </div>
     </a>
   {% else %}
-    <div class="it"><span class="muted small">Nenhuma conversa ainda.</span></div>
+    <div class="it"><span class="muted small">{{ t("Nenhuma conversa ainda.") }}</span></div>
   {% endfor %}
 </div></div>
 
@@ -44,9 +44,9 @@
   <div class="card wa" style="background:linear-gradient(135deg,#0d3b2e,#0f5132);color:#fff">
     <div style="display:flex;align-items:center;gap:8px">
       <span class="pill green">WhatsApp</span>
-      <strong class="small" style="color:#fff">Receba e responda pelo WhatsApp</strong>
+      <strong class="small" style="color:#fff">{{ t("Receba e responda pelo WhatsApp") }}</strong>
     </div>
-    <p style="font-size:13px;color:#dcf5e8;margin:8px 0 0">Canal oficial, sem grupo e sem ruído — você responde de onde preferir.</p>
+    <p style="font-size:13px;color:#dcf5e8;margin:8px 0 0">{{ t("Canal oficial, sem grupo e sem ruído — você responde de onde preferir.") }}</p>
   </div>
 </div>
 

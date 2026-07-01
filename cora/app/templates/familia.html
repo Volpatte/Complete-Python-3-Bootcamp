@@ -8,28 +8,28 @@
     <div class="avatar">JP</div>
     <button class="icon-btn">🔔<span class="dot"></span></button>
   </div>
-  <h1>Oi, {{ responsavel.nome.split(' ')[0] }} 👋</h1>
+  <h1>{{ t("Oi,") }} {{ responsavel.nome.split(' ')[0] }} 👋</h1>
   <p class="sub">{{ responsavel.filho }} · {{ responsavel.turma }}</p>
 </header>
 
 <div class="quick">
-  <a href="/familia/saude"><div class="qi" style="background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff">🩺</div>Saúde</a>
-  <a href="/familia/loja"><div class="qi">🛍️</div>Loja</a>
-  <a href="/familia/mensagens"><div class="qi">💬</div>Mensagens</a>
-  <a href="/familia/agenda"><div class="qi">📅</div>Agenda</a>
-  <a href="#tarefas"><div class="qi">📚</div>Tarefas</a>
+  <a href="/familia/saude"><div class="qi" style="background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff">🩺</div>{{ t("Saúde") }}</a>
+  <a href="/familia/loja"><div class="qi">🛍️</div>{{ t("Loja") }}</a>
+  <a href="/familia/mensagens"><div class="qi">💬</div>{{ t("Mensagens") }}</a>
+  <a href="/familia/agenda"><div class="qi">📅</div>{{ t("Agenda") }}</a>
+  <a href="#tarefas"><div class="qi">📚</div>{{ t("Tarefas") }}</a>
 </div>
 
-<div class="sec-h pad" style="margin-top:18px"><h2>Hoje na escola</h2><a href="#">ver tudo</a></div>
+<div class="sec-h pad" style="margin-top:18px"><h2>{{ t("Hoje na escola") }}</h2><a href="#">{{ t("ver tudo") }}</a></div>
 <div class="stories">
-  <div class="story"><div class="ring"><div>📸</div></div><span>Mural</span></div>
-  <div class="story"><div class="ring"><div>🍽️</div></div><span>Cardápio</span></div>
-  <div class="story"><div class="ring"><div>🎒</div></div><span>Lição</span></div>
-  <div class="story read"><div class="ring"><div>⚽</div></div><span>Ed. Física</span></div>
-  <div class="story read"><div class="ring"><div>🎨</div></div><span>Arte</span></div>
+  <div class="story"><div class="ring"><div>📸</div></div><span>{{ t("Mural") }}</span></div>
+  <div class="story"><div class="ring"><div>🍽️</div></div><span>{{ t("Cardápio") }}</span></div>
+  <div class="story"><div class="ring"><div>🎒</div></div><span>{{ t("Lição") }}</span></div>
+  <div class="story read"><div class="ring"><div>⚽</div></div><span>{{ t("Ed. Física") }}</span></div>
+  <div class="story read"><div class="ring"><div>🎨</div></div><span>{{ t("Arte") }}</span></div>
 </div>
 
-<div class="sec-h pad"><h2>Seu feed</h2><a href="#">filtrar</a></div>
+<div class="sec-h pad"><h2>{{ t("Seu feed") }}</h2><a href="#">{{ t("filtrar") }}</a></div>
 <div class="pad">
   {% for c in comunicados %}
     {% set p = ai.prioridade(c.titulo, c.corpo) %}
@@ -47,21 +47,21 @@
 
       <div class="title">{{ c.titulo }}</div>
 
-      <span class="ai-chip">✨ Resumo Cora IA</span>
+      <span class="ai-chip">✨ {{ t("Resumo") }} Cora IA</span>
       <div class="ai-summary">{{ c.resumo or ai.resumir(c.corpo) }}</div>
 
-      {% if c.precisa_confirmar %}<span class="tag amber">✅ precisa confirmar</span>{% endif %}
+      {% if c.precisa_confirmar %}<span class="tag amber">✅ {{ t("precisa confirmar") }}</span>{% endif %}
 
       <div class="actions">
         <button type="button">❤️ {{ c.leram // 9 }}</button>
-        <button type="button">💬 Responder</button>
+        <button type="button">💬 {{ t("Responder") }}</button>
         <button type="button" style="margin-left:auto">↗️</button>
       </div>
     </a>
   {% endfor %}
 </div>
 
-<div class="sec-h pad" id="tarefas"><h2>Tarefas do {{ responsavel.filho.split(' ')[0] }}</h2><a href="#">tudo</a></div>
+<div class="sec-h pad" id="tarefas"><h2>{{ t("Tarefas do") }} {{ responsavel.filho.split(' ')[0] }}</h2><a href="#">{{ t("tudo") }}</a></div>
 <div class="pad"><div class="list2">
   {% for t in tarefas %}
   <div class="it">
@@ -71,15 +71,15 @@
   {% endfor %}
 </div></div>
 
-<div class="sec-h pad" id="autorizacoes"><h2>Autorizações</h2></div>
+<div class="sec-h pad" id="autorizacoes"><h2>{{ t("Autorizações") }}</h2></div>
 <div class="pad"><div class="list2">
   {% for a in autorizacoes %}
   <div class="it">
     <div><div class="l">{{ a.titulo }}</div><div class="s">{{ a.data_evento|dia }}</div></div>
     {% if a.status=='autorizado' %}
-      <span class="tag green">autorizado</span>
+      <span class="tag green">{{ t("autorizado") }}</span>
     {% else %}
-      <button class="cta soft" style="width:auto;padding:9px 16px">Autorizar</button>
+      <button class="cta soft" style="width:auto;padding:9px 16px">{{ t("Autorizar") }}</button>
     {% endif %}
   </div>
   {% endfor %}
@@ -89,15 +89,15 @@
   <div class="post" style="background:linear-gradient(135deg,#0d3b2e,#0f5132);color:#fff">
     <div class="top">
       <div class="pin" style="background:#25d366">✓</div>
-      <div style="flex:1"><div class="who" style="color:#fff">Receba também no WhatsApp</div>
-      <div class="when" style="color:#cdeedd">canal oficial, sem grupo, sem ruído</div></div>
+      <div style="flex:1"><div class="who" style="color:#fff">{{ t("Receba também no WhatsApp") }}</div>
+      <div class="when" style="color:#cdeedd">{{ t("canal oficial, sem grupo, sem ruído") }}</div></div>
     </div>
     {% if responsavel.whatsapp %}
-      <p style="font-size:13.5px;color:#dcf5e8;margin:0">✅ Ativado! Os avisos da escola chegam no seu WhatsApp, com confirmação de leitura.</p>
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0">✅ {{ t("Ativado! Os avisos da escola chegam no seu WhatsApp, com confirmação de leitura.") }}</p>
     {% else %}
-      <p style="font-size:13.5px;color:#dcf5e8;margin:0 0 12px">Tudo isso chega no seu WhatsApp com confirmação de leitura. Você responde de onde preferir.</p>
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0 0 12px">{{ t("Tudo isso chega no seu WhatsApp com confirmação de leitura. Você responde de onde preferir.") }}</p>
       <form action="/familia/whatsapp/ativar" method="post">
-        <button class="cta" style="background:#25d366" type="submit">Ativar no WhatsApp</button>
+        <button class="cta" style="background:#25d366" type="submit">{{ t("Ativar no WhatsApp") }}</button>
       </form>
     {% endif %}
   </div>

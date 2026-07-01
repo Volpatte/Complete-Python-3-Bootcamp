@@ -1,14 +1,14 @@
 {% extends "app_shell.html" %}
 {% set tab = 'msg' %}
-{% block title %}Assistente Cora{% endblock %}
+{% block title %}{{ t("Assistente Cora") }}{% endblock %}
 {% block screen %}
 
 <div class="chat-head">
   <a href="/familia/mensagens" class="back">‹</a>
   <div class="pin" style="width:42px;height:42px;border-radius:13px;background:#25d366;display:grid;place-items:center;font-size:20px">🤖</div>
   <div style="flex:1">
-    <div style="font-weight:800">Assistente Cora</div>
-    <div style="font-size:12px;opacity:.85">IA · responde 24 horas 💜</div>
+    <div style="font-weight:800">{{ t("Assistente Cora") }}</div>
+    <div style="font-size:12px;opacity:.85">{{ t("IA · responde 24 horas") }} 💜</div>
   </div>
 </div>
 
@@ -20,7 +20,7 @@
 </div>
 
 <div class="composer">
-  <input id="msg" autocomplete="off" placeholder="Pergunte à Cora…"
+  <input id="msg" autocomplete="off" placeholder="{{ t('Pergunte à Cora…') }}"
          onkeydown="if(event.key==='Enter'){send(this.value); this.value=''}">
   <button class="cta" style="width:52px;padding:13px" onclick="var m=document.getElementById('msg'); send(m.value); m.value=''">➤</button>
 </div>

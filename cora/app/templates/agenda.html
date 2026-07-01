@@ -5,10 +5,10 @@
 
 <header class="app-head">
   <div class="row">
-    <h1 style="margin:0">Agenda</h1>
+    <h1 style="margin:0">{{ t("Agenda") }}</h1>
     <button class="icon-btn">＋</button>
   </div>
-  <p class="sub" style="margin-top:6px">{{ responsavel.filho }} · próximos dias</p>
+  <p class="sub" style="margin-top:6px">{{ responsavel.filho }} · {{ t("próximos dias") }}</p>
 </header>
 
 <div class="pad" style="margin-top:18px">
@@ -26,10 +26,10 @@
   {% endfor %}
 </div>
 
-<div class="sec-h pad"><h2>✨ Resumo da semana</h2></div>
+<div class="sec-h pad"><h2>✨ {{ t("Resumo da semana") }}</h2></div>
 <div class="pad">
   <div class="ai-summary" style="background:#fff;box-shadow:var(--shadow-sm)">
-    A Cora IA preparou: <b>1 saída antecipada amanhã</b>, <b>1 prova de matemática</b> em 3 dias e a <b>reunião de pais</b> na próxima semana. Toque em cada evento para detalhes ou peça lembretes no WhatsApp.
+    {{ t("A Cora IA preparou:") }} <b>{{ t("1 saída antecipada amanhã") }}</b>, <b>{{ t("1 prova de matemática") }}</b> {{ t("em 3 dias e a") }} <b>{{ t("reunião de pais") }}</b> {{ t("na próxima semana. Toque em cada evento para detalhes ou peça lembretes no WhatsApp.") }}
   </div>
 </div>
 

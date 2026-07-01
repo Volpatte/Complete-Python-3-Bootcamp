@@ -1,40 +1,40 @@
 {% extends "base.html" %}
 {% set active = 'coord' %}
-{% block title %}Coordenação · Cora{% endblock %}
+{% block title %}{{ t("Coordenação") }} · Cora{% endblock %}
 {% block content %}
-<h2 style="margin:0 0 2px">Painel da Coordenação</h2>
-<p class="muted small">Visão de engajamento e comunicação · {{ escola.nome }}</p>
+<h2 style="margin:0 0 2px">{{ t("Painel da Coordenação") }}</h2>
+<p class="muted small">{{ t("Visão de engajamento e comunicação") }} · {{ escola.nome }}</p>
 
 <div class="grid cols-4" style="margin-top:18px">
-  <div class="card kpi"><div class="num">{{ media_leitura }}%</div><div class="lbl">taxa média de leitura</div></div>
-  <div class="card kpi"><div class="num">{{ comunicados|length }}</div><div class="lbl">comunicados na semana</div></div>
-  <div class="card kpi"><div class="num">{{ familias_risco|length }}</div><div class="lbl">famílias em risco</div></div>
-  <div class="card kpi"><div class="num">{{ integracoes|selectattr('status','equalto','conectado')|list|length }}</div><div class="lbl">integrações ativas</div></div>
+  <div class="card kpi"><div class="num">{{ media_leitura }}%</div><div class="lbl">{{ t("taxa média de leitura") }}</div></div>
+  <div class="card kpi"><div class="num">{{ comunicados|length }}</div><div class="lbl">{{ t("comunicados na semana") }}</div></div>
+  <div class="card kpi"><div class="num">{{ familias_risco|length }}</div><div class="lbl">{{ t("famílias em risco") }}</div></div>
+  <div class="card kpi"><div class="num">{{ integracoes|selectattr('status','equalto','conectado')|list|length }}</div><div class="lbl">{{ t("integrações ativas") }}</div></div>
 </div>
 
 <div class="ai-box" style="margin-top:18px">
-  <div class="head">✨ Insight da IA (Claude)</div>
+  <div class="head">✨ {{ t("Insight da IA (Claude)") }}</div>
   <div>{{ insight }}</div>
 </div>
 
 <div class="grid cols-2">
   <div class="card">
-    <h3>Engajamento por turma</h3>
-    <p class="sub">Taxa de leitura de comunicados</p>
-    {% for t in engajamento %}
+    <h3>{{ t("Engajamento por turma") }}</h3>
+    <p class="sub">{{ t("Taxa de leitura de comunicados") }}</p>
+    {% for tr in engajamento %}
       <div style="margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
-          <strong>{{ t.turma }}</strong>
-          <span class="muted">{{ t.taxa_leitura }}% · {{ t.risco }} em risco</span>
+          <strong>{{ tr.turma }}</strong>
+          <span class="muted">{{ tr.taxa_leitura }}% · {{ tr.risco }} {{ t("em risco") }}</span>
         </div>
-        <div class="bar"><span style="width:{{ t.taxa_leitura }}%"></span></div>
+        <div class="bar"><span style="width:{{ tr.taxa_leitura }}%"></span></div>
       </div>
     {% endfor %}
   </div>
 
   <div class="card">
-    <h3>Radar de famílias em risco 🛟</h3>
-    <p class="sub">A IA sinaliza quem pode desengajar (churn)</p>
+    <h3>{{ t("Radar de famílias em risco") }} 🛟</h3>
+    <p class="sub">{{ t("A IA sinaliza quem pode desengajar (churn)") }}</p>
     <ul class="list">
       {% for f in familias_risco %}
       <li>
@@ -49,16 +49,16 @@
   </div>
 </div>
 
-<p class="section-title">Integrações — o hub que conecta o que a escola já usa</p>
+<p class="section-title">{{ t("Integrações — o hub que conecta o que a escola já usa") }}</p>
 <div class="grid cols-3">
   {% for i in integracoes %}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <strong>{{ i.nome }}</strong>
       {% if i.status == 'conectado' %}
-        <span class="pill green">● conectado</span>
+        <span class="pill green">● {{ t("conectado") }}</span>
       {% else %}
-        <span class="pill gray">+ disponível</span>
+        <span class="pill gray">+ {{ t("disponível") }}</span>
       {% endif %}
     </div>
     <p class="muted small" style="margin:6px 0 0">{{ i.categoria }}</p>
@@ -66,7 +66,7 @@
   {% endfor %}
 </div>
 
-<p class="section-title">Comunicados recentes</p>
+<p class="section-title">{{ t("Comunicados recentes") }}</p>
 <div class="grid cols-2">
   {% for c in comunicados %}
   <div class="card">
@@ -75,8 +75,8 @@
     <div style="font-weight:700;margin:8px 0 2px">{{ c.titulo }}</div>
     <div class="muted small">{{ c.autor }} · {{ c.enviado_em|data_hora }}</div>
     <div style="margin-top:10px;font-size:13px">
-      📖 {{ c.leram }}/{{ c.total_familias }} leram
-      {% if c.precisa_confirmar %} · ✅ {{ c.confirmaram }} confirmaram{% endif %}
+      📖 {{ c.leram }}/{{ c.total_familias }} {{ t("leram") }}
+      {% if c.precisa_confirmar %} · ✅ {{ c.confirmaram }} {{ t("confirmaram") }}{% endif %}
     </div>
   </div>
   {% endfor %}

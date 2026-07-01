@@ -20,13 +20,13 @@
       {{ m.corpo }}<div class="t">{{ m.enviado_em|data_hora }}</div>
     </div>
   {% else %}
-    <p class="muted small center">Nenhuma mensagem ainda. Diga olá 👋</p>
+    <p class="muted small center">{{ t("Nenhuma mensagem ainda. Diga olá") }} 👋</p>
   {% endfor %}
 </div>
 
 <form method="post" action="/familia/mensagens/{{ conversa.id }}/enviar"
       style="position:sticky;bottom:84px;display:flex;gap:10px;align-items:center;padding:10px 16px;background:linear-gradient(180deg,transparent,var(--surface-2) 30%)">
-  <input name="corpo" autocomplete="off" placeholder="Mensagem…" required
+  <input name="corpo" autocomplete="off" placeholder="{{ t('Mensagem…') }}" required
          style="flex:1;border:1px solid var(--line);border-radius:16px;padding:13px 16px;font-size:14px;font-family:inherit;background:#fff">
   <button class="cta" style="width:52px;padding:13px" type="submit">➤</button>
 </form>
