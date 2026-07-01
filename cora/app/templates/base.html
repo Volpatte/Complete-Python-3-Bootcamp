@@ -13,6 +13,7 @@
       <a href="/coordenacao" class="{{ 'active' if active=='coord' }}">{{ t("Coordenação") }}</a>
       <a href="/professor" class="{{ 'active' if active=='prof' }}">{{ t("Professor") }}</a>
       <a href="/familia" class="{{ 'active' if active=='fam' }}">{{ t("Família") }}</a>
+      {% if is_admin %}<a href="/admin" class="{{ 'active' if active=='admin' }}">{{ t("Gestão") }}</a>{% endif %}
       {% if user and user.papel in ('professor', 'coordenacao') %}<a href="/mensagens" class="{{ 'active' if active=='msg' }}">{{ t("Mensagens") }}</a>{% endif %}
       {% if user and user.papel == 'coordenacao' %}<a href="/whatsapp" class="{{ 'active' if active=='wa' }}">WhatsApp</a>{% endif %}
       {% if user and user.papel == 'coordenacao' %}<a href="/saude" class="{{ 'active' if active=='saude' }}">{{ t("Saúde") }}</a>{% endif %}

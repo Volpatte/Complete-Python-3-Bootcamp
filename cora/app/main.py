@@ -14,20 +14,21 @@ from __future__ import annotations
 import os
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import ai, analytics, assistant, data, i18n, models, whatsapp
 from .db import get_db
 from .seed import init_db
-from .security import autenticar
+from .security import autenticar, hash_senha, senha_temporaria
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -60,7 +61,10 @@ async def _handle_redirect(request: Request, exc: Redirecionar):
 
 
 def _home_do(papel: str) -> str:
-    return {"coordenacao": "/coordenacao", "professor": "/professor", "familia": "/familia"}.get(papel, "/")
+    return {
+        "coordenacao": "/coordenacao", "professor": "/professor", "familia": "/familia",
+        "direcao": "/admin", "secretaria": "/admin", "financeiro": "/admin",
+    }.get(papel, "/")
 
 
 def exigir(*papeis: str):
@@ -83,6 +87,7 @@ def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
     base = {
         "request": request, "escola": data.ESCOLA, "ai": ai, "user": user,
         "lang": lang, "t": i18n.translator(lang), "langs": i18n.LANGS,
+        "is_admin": bool(user and user.papel in models.PAPEIS_ADMIN),
     }
     base.update(extra)
     return base
@@ -132,7 +137,10 @@ def login_post(
 @app.get("/login/demo/{papel}")
 def login_demo(request: Request, papel: str, db: Session = Depends(get_db)):
     """Login rápido para demonstração (remover/desativar em produção)."""
-    emails = {"coordenacao": "coord@cora.app", "professor": "prof@cora.app", "familia": "familia@cora.app"}
+    emails = {
+        "coordenacao": "coord@cora.app", "professor": "prof@cora.app", "familia": "familia@cora.app",
+        "direcao": "dir@cora.app", "secretaria": "sec@cora.app", "financeiro": "fin@cora.app",
+    }
     user = db.scalar(select(models.Usuario).where(models.Usuario.email == emails.get(papel, "")))
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -152,6 +160,111 @@ def logout(request: Request):
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("home.html", _ctx(request))
+
+
+# --------------------------------------------------------------------------- #
+# Gestão da escola — administração de funcionários e famílias
+# --------------------------------------------------------------------------- #
+def _usuarios_da_escola(db: Session, escola_id: int):
+    return list(
+        db.scalars(
+            select(models.Usuario)
+            .where(models.Usuario.escola_id == escola_id)
+            .order_by(models.Usuario.papel, models.Usuario.nome)
+        )
+    )
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_home(
+    request: Request, nova_senha: str = "", nome_reset: str = "", msg: str = "", erro: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    usuarios = _usuarios_da_escola(db, user.escola_id)
+    return templates.TemplateResponse(
+        "admin.html",
+        _ctx(
+            request, user, active="admin",
+            equipe=[u for u in usuarios if u.papel in models.PAPEIS_STAFF],
+            familias=[u for u in usuarios if u.papel == models.FAMILIA],
+            papeis=models.PAPEIS_CRIAVEIS, turmas=data.TURMAS,
+            nova_senha=nova_senha, nome_reset=nome_reset, msg=msg, erro=erro,
+        ),
+    )
+
+
+@app.post("/admin/usuario")
+def admin_criar(
+    request: Request,
+    nome: str = Form(...), email: str = Form(...), papel: str = Form(...),
+    senha: str = Form(""), filho_nome: str = Form(""), turma: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    nome, email, papel = nome.strip(), email.strip().lower(), papel.strip()
+    if papel not in models.PAPEIS_CRIAVEIS or not nome or not email:
+        return RedirectResponse("/admin?erro=dados", status_code=303)
+    if db.scalar(select(models.Usuario).where(models.Usuario.email == email)):
+        return RedirectResponse("/admin?erro=email", status_code=303)
+    gerada = not senha.strip()
+    senha_final = senha.strip() or senha_temporaria()
+    novo = models.Usuario(
+        nome=nome, email=email, senha_hash=hash_senha(senha_final),
+        papel=papel, escola_id=user.escola_id, ativo=True,
+    )
+    if papel == models.FAMILIA:
+        novo.filho_nome = filho_nome.strip()
+        novo.turma = turma.strip()
+    db.add(novo)
+    db.commit()
+    if gerada:  # mostra a senha inicial uma vez
+        return RedirectResponse(
+            f"/admin?msg=criado&nova_senha={quote(senha_final)}&nome_reset={quote(nome)}",
+            status_code=303,
+        )
+    return RedirectResponse("/admin?msg=criado", status_code=303)
+
+
+@app.post("/admin/usuario/{uid}/senha")
+def admin_reset_senha(
+    request: Request, uid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    alvo = db.get(models.Usuario, uid)
+    if not alvo or alvo.escola_id != user.escola_id:
+        return RedirectResponse("/admin", status_code=303)
+    nova = senha_temporaria()
+    alvo.senha_hash = hash_senha(nova)
+    db.commit()
+    return RedirectResponse(
+        f"/admin?msg=senha&nova_senha={quote(nova)}&nome_reset={quote(alvo.nome)}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/usuario/{uid}/status")
+def admin_toggle_status(
+    request: Request, uid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    alvo = db.get(models.Usuario, uid)
+    if not alvo or alvo.escola_id != user.escola_id:
+        return RedirectResponse("/admin", status_code=303)
+    if alvo.id == user.id:
+        return RedirectResponse("/admin?erro=self", status_code=303)
+    # não desativar o último administrador ativo da escola
+    if alvo.ativo and alvo.papel in models.PAPEIS_ADMIN:
+        admins_ativos = db.scalar(
+            select(func.count()).select_from(models.Usuario).where(
+                models.Usuario.escola_id == user.escola_id,
+                models.Usuario.papel.in_(models.PAPEIS_ADMIN),
+                models.Usuario.ativo.is_(True),
+            )
+        )
+        if admins_ativos <= 1:
+            return RedirectResponse("/admin?erro=ultimo_admin", status_code=303)
+    alvo.ativo = not alvo.ativo
+    db.commit()
+    return RedirectResponse("/admin?msg=status", status_code=303)
 
 
 # --------------------------------------------------------------------------- #

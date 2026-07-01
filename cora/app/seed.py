@@ -43,6 +43,18 @@ def _seed(db: Session) -> None:
         nome="Prof. Marina", email="prof@cora.app", senha_hash=senha,
         papel=models.PROFESSOR, escola_id=escola.id,
     )
+    direcao = models.Usuario(
+        nome="Roberto Diretor", email="dir@cora.app", senha_hash=senha,
+        papel=models.DIRECAO, escola_id=escola.id,
+    )
+    secretaria = models.Usuario(
+        nome="Carla Secretaria", email="sec@cora.app", senha_hash=senha,
+        papel=models.SECRETARIA, escola_id=escola.id,
+    )
+    financeiro = models.Usuario(
+        nome="Marcos Financeiro", email="fin@cora.app", senha_hash=senha,
+        papel=models.FINANCEIRO, escola_id=escola.id,
+    )
     familia = models.Usuario(
         nome=data.RESPONSAVEL["nome"], email="familia@cora.app", senha_hash=senha,
         papel=models.FAMILIA, escola_id=escola.id,
@@ -50,7 +62,7 @@ def _seed(db: Session) -> None:
         idioma=data.RESPONSAVEL["idioma"],
         telefone="+5548999990000", whatsapp_optin=True,
     )
-    db.add_all([coord, prof, familia])
+    db.add_all([coord, prof, direcao, secretaria, financeiro, familia])
 
     coms_objs = []
     for c in data.COMUNICADOS:

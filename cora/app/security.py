@@ -9,6 +9,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import secrets
+import string
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,6 +18,12 @@ from sqlalchemy.orm import Session
 from .models import Usuario
 
 _ITERACOES = 200_000
+
+
+def senha_temporaria(n: int = 8) -> str:
+    """Gera uma senha inicial/temporária legível (letras + dígitos)."""
+    alfabeto = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alfabeto) for _ in range(n))
 
 
 def hash_senha(senha: str, salt: str | None = None) -> str:
@@ -35,6 +43,6 @@ def verificar_senha(senha: str, armazenado: str) -> bool:
 
 def autenticar(db: Session, email: str, senha: str) -> Usuario | None:
     user = db.scalar(select(Usuario).where(Usuario.email == email.strip().lower()))
-    if user and verificar_senha(senha, user.senha_hash):
+    if user and user.ativo and verificar_senha(senha, user.senha_hash):
         return user
     return None

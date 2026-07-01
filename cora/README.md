@@ -71,12 +71,19 @@ Usuários de demonstração (senha **`cora123`**), ou use os botões de acesso r
 | Papel | E-mail |
 |---|---|
 | Coordenação | `coord@cora.app` |
+| Direção | `dir@cora.app` |
+| Secretaria | `sec@cora.app` |
+| Financeiro | `fin@cora.app` |
 | Professor | `prof@cora.app` |
 | Família | `familia@cora.app` |
+
+> **Idiomas:** a interface e o conteúdo têm PT · EN · ES (seletor no topo;
+> detecta o idioma do navegador). Veja `app/i18n.py` e `app/translations.json`.
 
 ## Telas (perfis navegáveis)
 
 - `/` — landing + seletor de perfil
+- `/admin` — **Gestão da escola** (coordenação/direção/secretaria/financeiro): cria/convida funcionários e famílias, define papéis, redefine senhas e ativa/desativa contas
 - `/coordenacao` — analytics, insight de IA, radar de risco, integrações
 - `/professor` — compor comunicado e ver a IA resumir/priorizar/traduzir
 - `/familia` — feed inteligente, agenda, tarefas, autorizações, respostas sugeridas

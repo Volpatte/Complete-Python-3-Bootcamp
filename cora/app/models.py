@@ -16,8 +16,18 @@ from .db import Base
 
 # Papéis de usuário
 COORDENACAO = "coordenacao"
+DIRECAO = "direcao"
+SECRETARIA = "secretaria"
+FINANCEIRO = "financeiro"
 PROFESSOR = "professor"
 FAMILIA = "familia"
+
+# Papéis administrativos (back-office) — acessam a Gestão da escola.
+PAPEIS_ADMIN = (COORDENACAO, DIRECAO, SECRETARIA, FINANCEIRO)
+# Todos os papéis de funcionário (não-família).
+PAPEIS_STAFF = (COORDENACAO, DIRECAO, SECRETARIA, FINANCEIRO, PROFESSOR)
+# Papéis que a Gestão pode criar (ordem de exibição no formulário).
+PAPEIS_CRIAVEIS = (PROFESSOR, COORDENACAO, DIRECAO, SECRETARIA, FINANCEIRO, FAMILIA)
 
 
 class Escola(Base):
@@ -35,8 +45,9 @@ class Usuario(Base):
     nome: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     senha_hash: Mapped[str] = mapped_column(String(255))
-    papel: Mapped[str] = mapped_column(String(20))  # coordenacao | professor | familia
+    papel: Mapped[str] = mapped_column(String(20))  # coordenacao | direcao | secretaria | financeiro | professor | familia
     escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"))
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)  # contas desativadas não fazem login
 
     # Específico do perfil Família
     filho_nome: Mapped[str] = mapped_column(String(120), default="")
