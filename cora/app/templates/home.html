@@ -37,9 +37,9 @@
     .top .cta:hover{transform:translateY(-1px); box-shadow:0 10px 24px rgba(22,11,19,.22)}
 
     /* ---------- hero ---------- */
-    .hero{padding:34px 0 20px}
-    .stage{position:relative; overflow:hidden; border-radius:34px; background:var(--plum);
-      padding:96px 28px 104px; text-align:center; isolation:isolate}
+    .hero{padding:26px 0 16px}
+    .stage{position:relative; overflow:hidden; border-radius:30px; background:var(--plum);
+      padding:clamp(48px,7vw,68px) 28px clamp(52px,7vw,72px); text-align:center; isolation:isolate}
     .stage::before,.stage::after{content:""; position:absolute; z-index:-1; border-radius:50%;
       filter:blur(60px); opacity:.85}
     .stage::before{width:520px; height:520px; background:radial-gradient(circle,#ff4d6d,transparent 62%);
@@ -53,8 +53,8 @@
     .stage h1 .accent{background:linear-gradient(120deg,#ffd0dc,#ffb3c8 40%,#d8c4ff);
       -webkit-background-clip:text; background-clip:text; color:transparent}
     .stage .lede{color:rgba(255,255,255,.82); font-size:clamp(16px,2vw,20px); max-width:56ch;
-      margin:24px auto 0; font-weight:400}
-    .actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:38px}
+      margin:20px auto 0; font-weight:400}
+    .actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px}
     .btn{display:inline-flex; align-items:center; gap:8px; padding:15px 28px; border-radius:999px;
       font-weight:700; font-size:15px; transition:.2s; cursor:pointer; border:0}
     .btn.primary{background:#fff; color:var(--plum)}
