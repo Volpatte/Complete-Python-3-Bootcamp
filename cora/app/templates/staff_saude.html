@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set active = 'saude' %}
+{% block title %}Saúde · Cora{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 2px">{{ t("Saúde — Enfermaria") }}</h2>
+<p class="muted small">{{ t("Medicações autorizadas pelas famílias · registre a administração") }}</p>
+
+<div class="grid cols-2" style="margin-top:18px">
+  {% for m in medicacoes %}
+  {% set ficha = fichas.get(m.usuario_id) %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+      <div>
+        <strong>{{ m.aluno_nome }}</strong>
+        <div class="muted small">{{ m.nome }} · {{ m.dosagem }} · {{ m.horario }}</div>
+      </div>
+      <span class="pill green">{{ t("autorizada") }}</span>
+    </div>
+
+    {% if ficha and ficha.alergias %}<div style="margin-top:8px"><span class="pill red">⚠️ {{ t("alergias") }}</span> <span class="small">{{ ficha.alergias }}</span></div>{% endif %}
+    {% if ficha and ficha.condicoes %}<div style="margin-top:6px"><span class="pill amber">{{ t("condições") }}</span> <span class="small">{{ ficha.condicoes }}</span></div>{% endif %}
+    {% if m.instrucoes %}<div class="small" style="margin-top:8px"><strong>{{ t("Instruções:") }}</strong> {{ m.instrucoes }}</div>{% endif %}
+
+    <form method="post" action="/saude/administrar/{{ m.id }}" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <input name="dose" placeholder="{{ t('Dose') }} ({{ m.dosagem }})" style="flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:inherit">
+      <input name="observacao" placeholder="{{ t('Observação') }}" style="flex:2;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:inherit">
+      <button class="btn" type="submit">{{ t("Registrar administração") }}</button>
+    </form>
+
+    {% if m.administracoes %}
+    <div class="list" style="margin-top:10px">
+      {% for a in m.administracoes[:3] %}
+      <div style="padding:8px 0;border-top:1px solid var(--line);font-size:13px">
+        💊 {{ a.administrado_em|data_hora }} · {{ a.dose }} — <span class="muted">{{ a.administrado_por }}</span>
+        {% if a.observacao %}<div class="muted small">{{ a.observacao }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted small">{{ t("Nenhuma medicação autorizada no momento.") }}</p>
+  {% endfor %}
+</div>
+
+<div class="ai-box" style="margin-top:18px">
+  <div class="head">💡 {{ t("Por que isto importa") }}</div>
+  <div class="small">{{ t("Cada administração fica registrada e a família é avisada na hora (inclusive por WhatsApp). Alergias e condições de cuidado ficam sempre à vista de quem administra — segurança e rastreabilidade.") }}</div>
+</div>
+{% endblock %}

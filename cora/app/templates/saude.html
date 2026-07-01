@@ -1,0 +1,89 @@
+{% extends "app_shell.html" %}
+{% set tab = 'inicio' %}
+{% block title %}Saúde · Cora{% endblock %}
+{% block screen %}
+
+<header class="app-head">
+  <div class="row">
+    <h1 style="margin:0">🩺 {{ t("Saúde") }}</h1>
+  </div>
+  <p class="sub" style="margin-top:6px">{{ responsavel.filho }} · {{ t("ficha médica e medicações") }}</p>
+</header>
+
+<div class="pad" style="margin-top:18px">
+  <div class="post">
+    <div class="title" style="margin-bottom:10px">{{ t("Ficha médica") }}</div>
+    {% if ficha.alergias %}<div style="margin-bottom:8px"><span class="tag red">⚠️ {{ t("Alergias") }}</span> <span class="small">{{ ficha.alergias }}</span></div>{% endif %}
+    {% if ficha.condicoes %}<div style="margin-bottom:8px"><span class="tag amber">{{ t("Condições") }}</span> <span class="small">{{ ficha.condicoes }}</span></div>{% endif %}
+    {% if ficha.restricoes %}<div style="margin-bottom:8px"><span class="tag blue">{{ t("Restrições") }}</span> <span class="small">{{ ficha.restricoes }}</span></div>{% endif %}
+    <div class="list2" style="margin-top:10px">
+      <div class="it"><span class="s">{{ t("Tipo sanguíneo") }}</span><span class="l">{{ ficha.tipo_sanguineo or '—' }}</span></div>
+      <div class="it"><span class="s">{{ t("Contato de emergência") }}</span><span class="l" style="font-size:13px">{{ ficha.contato_emergencia or '—' }}</span></div>
+      <div class="it"><span class="s">{{ t("Convênio") }}</span><span class="l" style="font-size:13px">{{ ficha.convenio or '—' }}</span></div>
+    </div>
+
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;color:var(--grape);font-weight:700;font-size:14px">✏️ {{ t("Editar ficha") }}</summary>
+      <form method="post" action="/familia/saude/ficha" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <input name="tipo_sanguineo" placeholder="{{ t('Tipo sanguíneo (ex.: O+)') }}" value="{{ ficha.tipo_sanguineo }}" class="campo">
+        <textarea name="alergias" rows="2" placeholder="{{ t('Alergias') }}" class="campo">{{ ficha.alergias }}</textarea>
+        <textarea name="condicoes" rows="2" placeholder="{{ t('Condições / cuidados especiais') }}" class="campo">{{ ficha.condicoes }}</textarea>
+        <textarea name="restricoes" rows="2" placeholder="{{ t('Restrições alimentares') }}" class="campo">{{ ficha.restricoes }}</textarea>
+        <input name="contato_emergencia" placeholder="{{ t('Contato de emergência') }}" value="{{ ficha.contato_emergencia }}" class="campo">
+        <input name="convenio" placeholder="{{ t('Convênio') }}" value="{{ ficha.convenio }}" class="campo">
+        <textarea name="observacoes" rows="2" placeholder="{{ t('Observações') }}" class="campo">{{ ficha.observacoes }}</textarea>
+        <button class="cta" type="submit">{{ t("Salvar ficha") }}</button>
+      </form>
+    </details>
+  </div>
+</div>
+
+<div class="sec-h pad"><h2>{{ t("Medicações autorizadas") }}</h2></div>
+<div class="pad">
+  {% for m in medicacoes %}
+  <div class="post" style="padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>{{ m.nome }}</strong>
+      <span class="tag green">✓ {{ t("autorizada") }}</span>
+    </div>
+    <div class="small muted" style="margin-top:4px">{{ m.dosagem }} · {{ m.horario }}</div>
+    {% if m.instrucoes %}<div class="small" style="margin-top:6px">{{ m.instrucoes }}</div>{% endif %}
+  </div>
+  {% else %}
+  <p class="muted small">{{ t("Nenhuma medicação cadastrada.") }}</p>
+  {% endfor %}
+
+  <div class="post" style="padding:14px">
+    <details>
+      <summary style="cursor:pointer;color:var(--grape);font-weight:700;font-size:14px">➕ {{ t("Autorizar nova medicação") }}</summary>
+      <form method="post" action="/familia/saude/medicacao" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <input name="nome" placeholder="{{ t('Nome da medicação') }}" required class="campo">
+        <input name="dosagem" placeholder="{{ t('Dosagem (ex.: 2 jatos)') }}" class="campo">
+        <input name="horario" placeholder="{{ t('Quando (ex.: se necessário / 12h)') }}" class="campo">
+        <textarea name="instrucoes" rows="2" placeholder="{{ t('Instruções para a escola') }}" class="campo"></textarea>
+        <button class="cta" type="submit">{{ t("Autorizar medicação") }}</button>
+      </form>
+    </details>
+  </div>
+</div>
+
+<div class="sec-h pad"><h2>{{ t("Histórico de administração") }}</h2></div>
+<div class="pad"><div class="list2">
+  {% for a in administracoes %}
+  <div class="it">
+    <div>
+      <div class="l">💊 {{ medicacoes_nome.get(a.medicacao_id, t('Medicação')) }} · {{ a.dose }}</div>
+      <div class="s">{{ a.administrado_por }}{% if a.observacao %} — {{ a.observacao }}{% endif %}</div>
+    </div>
+    <span class="muted small">{{ a.administrado_em|data_hora }}</span>
+  </div>
+  {% else %}
+  <div class="it"><span class="muted small">{{ t("Nenhuma administração registrada.") }}</span></div>
+  {% endfor %}
+</div></div>
+
+<style>
+  .campo { border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-size:14px; font-family:inherit; background:#fff; width:100%; }
+</style>
+
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "app_shell.html" %}
+{% set tab = 'inicio' %}
+{% block title %}Cora · Início{% endblock %}
+{% block screen %}
+
+<header class="app-head">
+  <div class="row">
+    <div class="avatar">JP</div>
+    <button class="icon-btn">🔔<span class="dot"></span></button>
+  </div>
+  <h1>{{ t("Oi,") }} {{ responsavel.nome.split(' ')[0] }} 👋</h1>
+  <p class="sub">{{ responsavel.filho }} · {{ responsavel.turma }}</p>
+</header>
+
+<div class="quick">
+  <a href="/familia/saude"><div class="qi" style="background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff">🩺</div>{{ t("Saúde") }}</a>
+  <a href="/familia/loja"><div class="qi">🛍️</div>{{ t("Loja") }}</a>
+  <a href="/familia/mensagens"><div class="qi">💬</div>{{ t("Mensagens") }}</a>
+  <a href="/familia/agenda"><div class="qi">📅</div>{{ t("Agenda") }}</a>
+  <a href="#tarefas"><div class="qi">📚</div>{{ t("Tarefas") }}</a>
+</div>
+
+{% if filhos %}
+<div class="sec-h pad" style="margin-top:16px"><h2>{{ t("Meus filhos") }}</h2></div>
+<div class="pad"><div class="list2">
+  {% for al in filhos %}
+  <div class="it">
+    <div><div class="l">{{ al.nome }}</div><div class="s">{{ t(al.turma) }} · {{ t("Matrícula") }} {{ al.matricula }}</div></div>
+    <span class="tag">🎒</span>
+  </div>
+  {% endfor %}
+</div></div>
+{% endif %}
+
+<div class="sec-h pad" style="margin-top:18px"><h2>{{ t("Hoje na escola") }}</h2><a href="#">{{ t("ver tudo") }}</a></div>
+<div class="stories">
+  <div class="story"><div class="ring"><div>📸</div></div><span>{{ t("Mural") }}</span></div>
+  <div class="story"><div class="ring"><div>🍽️</div></div><span>{{ t("Cardápio") }}</span></div>
+  <div class="story"><div class="ring"><div>🎒</div></div><span>{{ t("Lição") }}</span></div>
+  <div class="story read"><div class="ring"><div>⚽</div></div><span>{{ t("Ed. Física") }}</span></div>
+  <div class="story read"><div class="ring"><div>🎨</div></div><span>{{ t("Arte") }}</span></div>
+</div>
+
+<div class="sec-h pad"><h2>{{ t("Seu feed") }}</h2><a href="#">{{ t("filtrar") }}</a></div>
+<div class="pad">
+  {% for c in comunicados %}
+    {% set p = ai.prioridade(c.titulo, c.corpo) %}
+    <a class="post" href="/familia/comunicado/{{ c.id }}">
+      <div class="top">
+        <div class="pin" style="background:linear-gradient(135deg,{{ p.cor }},{{ p.cor }}cc)">
+          {% if c.categoria=='urgente' %}⚠️{% elif c.categoria=='financeiro' %}💳{% elif c.categoria=='reuniao' %}🗓️{% else %}📘{% endif %}
+        </div>
+        <div style="flex:1">
+          <div class="who">{{ t(c.autor) }}</div>
+          <div class="when">{{ t(c.turma) }} · {{ c.enviado_em|data_hora }}</div>
+        </div>
+        <span class="tag" style="background:{{ p.cor }}1a;color:{{ p.cor }}">{{ t(p.rotulo) }}</span>
+      </div>
+
+      <div class="title">{{ t(c.titulo) }}</div>
+
+      <span class="ai-chip">✨ {{ t("Resumo") }} Cora IA</span>
+      <div class="ai-summary">{{ ai.resumir(t(c.corpo)) }}</div>
+
+      {% if c.precisa_confirmar %}<span class="tag amber">✅ {{ t("precisa confirmar") }}</span>{% endif %}
+
+      <div class="actions">
+        <button type="button">❤️ {{ c.leram // 9 }}</button>
+        <button type="button">💬 {{ t("Responder") }}</button>
+        <button type="button" style="margin-left:auto">↗️</button>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+<div class="sec-h pad" id="tarefas"><h2>{{ t("Tarefas do") }} {{ responsavel.filho.split(' ')[0] }}</h2><a href="#">{{ t("tudo") }}</a></div>
+<div class="pad"><div class="list2">
+  {% for tf in tarefas %}
+  <div class="it">
+    <div><div class="l">{{ t(tf.disciplina) }}</div><div class="s">{{ t(tf.titulo) }}</div></div>
+    <span class="tag {{ 'green' if tf.status=='entregue' else 'amber' }}">{{ tf.entrega|dia }}</span>
+  </div>
+  {% endfor %}
+</div></div>
+
+<div class="sec-h pad" id="autorizacoes"><h2>{{ t("Autorizações") }}</h2></div>
+<div class="pad"><div class="list2">
+  {% for a in autorizacoes %}
+  <div class="it">
+    <div><div class="l">{{ t(a.titulo) }}</div><div class="s">{{ a.data_evento|dia }}</div></div>
+    {% if a.status=='autorizado' %}
+      <span class="tag green">{{ t("autorizado") }}</span>
+    {% else %}
+      <button class="cta soft" style="width:auto;padding:9px 16px">{{ t("Autorizar") }}</button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div></div>
+
+<div class="pad" style="margin-top:18px">
+  <div class="post" style="background:linear-gradient(135deg,#0d3b2e,#0f5132);color:#fff">
+    <div class="top">
+      <div class="pin" style="background:#25d366">✓</div>
+      <div style="flex:1"><div class="who" style="color:#fff">{{ t("Receba também no WhatsApp") }}</div>
+      <div class="when" style="color:#cdeedd">{{ t("canal oficial, sem grupo, sem ruído") }}</div></div>
+    </div>
+    {% if responsavel.whatsapp %}
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0">✅ {{ t("Ativado! Os avisos da escola chegam no seu WhatsApp, com confirmação de leitura.") }}</p>
+    {% else %}
+      <p style="font-size:13.5px;color:#dcf5e8;margin:0 0 12px">{{ t("Tudo isso chega no seu WhatsApp com confirmação de leitura. Você responde de onde preferir.") }}</p>
+      <form action="/familia/whatsapp/ativar" method="post">
+        <button class="cta" style="background:#25d366" type="submit">{{ t("Ativar no WhatsApp") }}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

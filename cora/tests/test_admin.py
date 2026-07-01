@@ -1,0 +1,192 @@
+"""Testes da Gestão da escola (administração de usuários)."""
+
+from fastapi.testclient import TestClient
+from sqlalchemy import select
+
+from app import models
+from app.db import SessionLocal
+from app.main import app
+
+
+def _uid(email: str) -> int | None:
+    with SessionLocal() as db:
+        u = db.scalar(select(models.Usuario).where(models.Usuario.email == email))
+        return u.id if u else None
+
+
+def test_admin_lista_equipe_semeada(coord):
+    r = coord.get("/admin")
+    assert r.status_code == 200
+    assert "Roberto Diretor" in r.text and "Carla Secretaria" in r.text and "Marcos Financeiro" in r.text
+
+
+def test_criar_funcionario(coord):
+    coord.post("/admin/usuario", data={
+        "nome": "Teste Prof", "email": "tprof@x.com", "papel": "professor", "senha": "segredo123"})
+    assert "tprof@x.com" in coord.get("/admin").text
+
+
+def test_criar_familia_com_aluno(coord):
+    coord.post("/admin/usuario", data={
+        "nome": "Fam X", "email": "famx@x.com", "papel": "familia",
+        "senha": "segredo123", "filho_nome": "Kid X", "turma": "5º Ano A"})
+    html = coord.get("/admin").text
+    assert "famx@x.com" in html and "Kid X" in html
+
+
+def test_email_duplicado_bloqueado(coord):
+    coord.post("/admin/usuario", data={"nome": "A", "email": "dup@x.com", "papel": "professor", "senha": "x1234567"})
+    r = coord.post("/admin/usuario", data={"nome": "B", "email": "dup@x.com", "papel": "professor"},
+                   follow_redirects=False)
+    assert r.status_code == 303 and "erro=email" in r.headers["location"]
+
+
+def test_senha_gerada_quando_em_branco(coord):
+    r = coord.post("/admin/usuario", data={"nome": "Sem Senha", "email": "ss@x.com", "papel": "secretaria"},
+                   follow_redirects=False)
+    assert r.status_code == 303 and "nova_senha=" in r.headers["location"]
+
+
+def test_redefinir_senha_mostra_nova(coord):
+    # usa um usuário descartável (não semeado) para não poluir os testes de auth
+    coord.post("/admin/usuario", data={"nome": "Reset Me", "email": "resetme@x.com", "papel": "professor", "senha": "inicial123"})
+    r = coord.post(f"/admin/usuario/{_uid('resetme@x.com')}/senha", follow_redirects=False)
+    assert r.status_code == 303 and "nova_senha=" in r.headers["location"]
+
+
+def test_usuario_desativado_nao_loga(coord):
+    coord.post("/admin/usuario", data={"nome": "Off", "email": "off@x.com", "papel": "professor", "senha": "segredo123"})
+    coord.post(f"/admin/usuario/{_uid('off@x.com')}/status")  # desativa
+    c = TestClient(app)
+    r = c.post("/login", data={"email": "off@x.com", "senha": "segredo123"}, follow_redirects=False)
+    assert "erro=1" in r.headers["location"]
+
+
+def test_professor_nao_acessa_admin(professor):
+    r = professor.get("/admin", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
+
+
+def test_familia_nao_acessa_admin(familia):
+    r = familia.get("/admin", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/familia")
+
+
+def test_nao_desativa_a_propria_conta(coord):
+    r = coord.post(f"/admin/usuario/{_uid('coord@cora.app')}/status", follow_redirects=False)
+    assert "erro=self" in r.headers["location"]
+
+
+def test_direcao_acessa_admin():
+    c = TestClient(app)
+    c.get("/login/demo/direcao")
+    assert c.get("/admin").status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Roster de alunos
+# --------------------------------------------------------------------------- #
+def _aluno(nome: str):
+    with SessionLocal() as db:
+        return db.scalar(select(models.Aluno).where(models.Aluno.nome == nome))
+
+
+def test_roster_semeado(coord):
+    html = coord.get("/admin").text
+    assert "Pedro Prado" in html and "Laura Prado" in html  # família demo tem 2 filhos
+
+
+def test_criar_aluno_gera_matricula(coord):
+    coord.post("/admin/aluno", data={"nome": "Aluno Novo", "turma": "5º Ano A"})
+    a = _aluno("Aluno Novo")
+    assert a is not None and a.matricula.startswith("2026")
+
+
+def test_criar_aluno_vinculado_a_familia(coord):
+    fid = _uid("familia@cora.app")
+    coord.post("/admin/aluno", data={"nome": "Filho Vinc", "turma": "3º Ano A", "responsavel_id": str(fid)})
+    assert _aluno("Filho Vinc").responsavel_id == fid
+
+
+def test_familia_ve_seus_filhos(familia):
+    html = familia.get("/familia").text
+    assert "Laura Prado" in html  # 2º filho surge no bloco "Meus filhos"
+
+
+def test_toggle_aluno(coord):
+    coord.post("/admin/aluno", data={"nome": "Toggle Al", "turma": "5º Ano A"})
+    a = _aluno("Toggle Al")
+    assert a.ativo
+    coord.post(f"/admin/aluno/{a.id}/status")
+    assert not _aluno("Toggle Al").ativo
+
+
+def test_professor_nao_cria_aluno(professor):
+    r = professor.post("/admin/aluno", data={"nome": "Hack", "turma": "5º Ano A"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
+    assert _aluno("Hack") is None
+
+
+# --------------------------------------------------------------------------- #
+# Turmas gerenciáveis
+# --------------------------------------------------------------------------- #
+def _turma(nome: str):
+    with SessionLocal() as db:
+        return db.scalar(select(models.Turma).where(models.Turma.nome == nome))
+
+
+def test_turmas_semeadas():
+    with SessionLocal() as db:
+        n = len(list(db.scalars(select(models.Turma))))
+    assert n >= 4  # as 4 turmas de data.TURMAS
+
+
+def test_criar_turma_com_professor(coord):
+    pid = _uid("prof@cora.app")
+    coord.post("/admin/turma", data={"nome": "4º Ano B", "professor_id": str(pid)})
+    tu = _turma("4º Ano B")
+    assert tu is not None and tu.professor_nome == "Prof. Marina" and tu.professor_id == pid
+
+
+def test_toggle_turma(coord):
+    coord.post("/admin/turma", data={"nome": "Turma Toggle"})
+    tu = _turma("Turma Toggle")
+    assert tu.ativo
+    coord.post(f"/admin/turma/{tu.id}/status")
+    assert not _turma("Turma Toggle").ativo
+
+
+def test_professor_nao_cria_turma(professor):
+    r = professor.post("/admin/turma", data={"nome": "Hack Turma"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
+    assert _turma("Hack Turma") is None
+
+
+# --------------------------------------------------------------------------- #
+# Importação por CSV
+# --------------------------------------------------------------------------- #
+def test_importar_csv(coord):
+    csv = (
+        "aluno,turma,email,responsavel\n"
+        "Bruno Alves,3º Ano A,alves@x.com,Família Alves\n"
+        "Sofia Alves,3º Ano A,alves@x.com,Família Alves\n"  # mesmo responsável → 2º filho
+        "Rex Solo,5º Ano B,,\n"                              # sem responsável
+    )
+    r = coord.post("/admin/importar", files={"arquivo": ("alunos.csv", csv.encode(), "text/csv")},
+                   follow_redirects=False)
+    assert r.status_code == 303
+    loc = r.headers["location"]
+    assert "imp_alunos=3" in loc and "imp_familias=1" in loc
+    with SessionLocal() as db:
+        fam = db.scalar(select(models.Usuario).where(models.Usuario.email == "alves@x.com"))
+        assert fam is not None and fam.papel == "familia"
+        bruno = db.scalar(select(models.Aluno).where(models.Aluno.nome == "Bruno Alves"))
+        assert bruno.responsavel_id == fam.id and bruno.matricula.startswith("2026")
+        solo = db.scalar(select(models.Aluno).where(models.Aluno.nome == "Rex Solo"))
+        assert solo.responsavel_id is None
+
+
+def test_professor_nao_importa(professor):
+    r = professor.post("/admin/importar", files={"arquivo": ("x.csv", b"aluno\nX\n", "text/csv")},
+                       follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set active = 'msg' %}
+{% block title %}Mensagens · Cora{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 2px">{{ t("Mensagens") }}</h2>
+<p class="muted small">{{ t("Conversas com as famílias") }} · {{ user.nome }}</p>
+
+<div class="card" style="margin-top:18px">
+  <ul class="list">
+    {% for c in conversas %}
+      {% set ultima = c.mensagens[-1] if c.mensagens else None %}
+      <li>
+        <a href="/mensagens/{{ c.id }}" style="display:flex;justify-content:space-between;width:100%;gap:12px;align-items:center">
+          <div>
+            <strong>{{ c.canal }}</strong>
+            <div class="muted small">{{ ultima.corpo[:80] if ultima else t('Sem mensagens') }}</div>
+          </div>
+          <span class="muted small">{{ c.atualizado_em|data_hora }}</span>
+        </a>
+      </li>
+    {% else %}
+      <li><span class="muted small">{{ t("Nenhuma conversa.") }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Cora · {{ t("Gestão") }}{% endblock %}
+{% block content %}
+{% set PAPEL_LABEL = {
+  'coordenacao': t('Coordenação'), 'direcao': t('Direção'), 'secretaria': t('Secretaria'),
+  'financeiro': t('Financeiro'), 'professor': t('Professor'), 'familia': t('Família')
+} %}
+
+<div class="hero" style="text-align:left;padding:24px 0 6px">
+  <h1 style="font-size:30px;margin:0 0 6px">{{ t("Gestão da escola") }}</h1>
+  <p style="color:var(--muted);margin:0;font-size:16px;max-width:60ch">
+    {{ t("Adicione funcionários e famílias, defina papéis e redefina senhas.") }}</p>
+</div>
+
+{# ---- avisos ---- #}
+{% if nova_senha %}
+<div class="ai-box" style="border-color:#bbf7d0;background:linear-gradient(135deg,#f0fdf4,#ecfdf5)">
+  <div class="head" style="color:#059669">🔑 {{ t("Nova senha de") }} {{ nome_reset }}</div>
+  <div style="font-size:22px;font-weight:800;letter-spacing:.02em;font-family:monospace">{{ nova_senha }}</div>
+  <div class="muted small" style="margin-top:4px">{{ t("anote agora — não será mostrada de novo") }}</div>
+</div>
+{% elif msg == 'criado' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Usuário criado com sucesso.") }}</div></div>
+{% elif msg == 'status' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Status atualizado.") }}</div></div>
+{% elif msg == 'aluno' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Lista de alunos atualizada.") }}</div></div>
+{% elif msg == 'turma' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Turmas atualizadas.") }}</div></div>
+{% elif msg == 'import' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Importação concluída:") }}
+  {{ imp_alunos }} {{ t("alunos") }}, {{ imp_familias }} {{ t("famílias") }}{% if imp_erros %} · {{ imp_erros }} {{ t("com erro") }}{% endif %}.</div></div>
+{% endif %}
+{% if erro %}
+<div class="ai-box" style="border-color:#fecaca;background:#fef2f2"><div class="head" style="color:#dc2626">⚠️
+  {% if erro == 'email' %}{{ t("Este e-mail já está em uso.") }}
+  {% elif erro == 'self' %}{{ t("Você não pode desativar a própria conta.") }}
+  {% elif erro == 'ultimo_admin' %}{{ t("Não é possível desativar o último administrador ativo.") }}
+  {% else %}{{ t("Preencha nome, e-mail e papel.") }}{% endif %}
+</div></div>
+{% endif %}
+
+{# ---- novo usuário ---- #}
+<p class="section-title">{{ t("Novo usuário") }}</p>
+<div class="card">
+  <form action="/admin/usuario" method="post">
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Nome") }}</label>
+        <input name="nome" required placeholder="Ex.: Maria Silva">
+      </div>
+      <div>
+        <label>{{ t("E-mail") }}</label>
+        <input name="email" type="email" required placeholder="maria@escola.com">
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Papel") }}</label>
+        <select name="papel" id="papel-select" onchange="toggleFam()">
+          {% for pp in papeis %}<option value="{{ pp }}">{{ PAPEL_LABEL[pp] }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t("Senha (deixe em branco para gerar)") }}</label>
+        <input name="senha" type="text" autocomplete="off" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="grid cols-2 fam-fields" id="fam-fields" style="display:none">
+      <div>
+        <label>{{ t("Aluno (filho)") }}</label>
+        <input name="filho_nome" placeholder="Ex.: João Silva">
+      </div>
+      <div>
+        <label>{{ t("Turma") }}</label>
+        <select name="turma">
+          {% for tm in turmas %}<option value="{{ tm.nome }}">{{ tm.nome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px">{{ t("Criar usuário") }}</button>
+  </form>
+</div>
+
+{# ---- equipe ---- #}
+<p class="section-title">{{ t("Equipe") }} · {{ equipe|length }}</p>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Nome") }}</th>
+      <th style="padding:12px 16px">{{ t("Papel") }}</th>
+      <th style="padding:12px 16px">{{ t("Status") }}</th>
+      <th style="padding:12px 16px;text-align:right">{{ t("Ações") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for u in equipe %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px">
+          <div style="font-weight:700">{{ u.nome }}{% if u.id == user.id %} <span class="pill gray">{{ t("Você") }}</span>{% endif %}</div>
+          <div class="muted small">{{ u.email }}</div>
+        </td>
+        <td style="padding:12px 16px"><span class="pill ai">{{ PAPEL_LABEL.get(u.papel, u.papel) }}</span></td>
+        <td style="padding:12px 16px">
+          {% if u.ativo %}<span class="pill green">● {{ t("Ativo") }}</span>{% else %}<span class="pill gray">○ {{ t("Inativo") }}</span>{% endif %}
+        </td>
+        <td style="padding:12px 16px;text-align:right;white-space:nowrap">
+          <form action="/admin/usuario/{{ u.id }}/senha" method="post" style="display:inline">
+            <button class="btn ghost" style="padding:7px 12px;font-size:12.5px">{{ t("Redefinir senha") }}</button>
+          </form>
+          {% if u.id != user.id %}
+          <form action="/admin/usuario/{{ u.id }}/status" method="post" style="display:inline">
+            <button class="btn" style="padding:7px 12px;font-size:12.5px;background:{{ '#6b7280' if u.ativo else 'var(--green)' }}">{{ t("Desativar") if u.ativo else t("Ativar") }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ---- famílias ---- #}
+<p class="section-title">{{ t("Famílias") }} · {{ familias|length }}</p>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Nome") }}</th>
+      <th style="padding:12px 16px">{{ t("Aluno (filho)") }}</th>
+      <th style="padding:12px 16px">{{ t("Status") }}</th>
+      <th style="padding:12px 16px;text-align:right">{{ t("Ações") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for u in familias %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px"><div style="font-weight:700">{{ u.nome }}</div><div class="muted small">{{ u.email }}</div></td>
+        <td style="padding:12px 16px">{{ u.filho_nome or '—' }}{% if u.turma %} <span class="muted small">· {{ u.turma }}</span>{% endif %}</td>
+        <td style="padding:12px 16px">{% if u.ativo %}<span class="pill green">● {{ t("Ativo") }}</span>{% else %}<span class="pill gray">○ {{ t("Inativo") }}</span>{% endif %}</td>
+        <td style="padding:12px 16px;text-align:right;white-space:nowrap">
+          <form action="/admin/usuario/{{ u.id }}/senha" method="post" style="display:inline">
+            <button class="btn ghost" style="padding:7px 12px;font-size:12.5px">{{ t("Redefinir senha") }}</button>
+          </form>
+          <form action="/admin/usuario/{{ u.id }}/status" method="post" style="display:inline">
+            <button class="btn" style="padding:7px 12px;font-size:12.5px;background:{{ '#6b7280' if u.ativo else 'var(--green)' }}">{{ t("Desativar") if u.ativo else t("Ativar") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" style="padding:16px;color:var(--muted)">{{ t("Nenhuma família cadastrada ainda.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ---- turmas ---- #}
+<p class="section-title">{{ t("Turmas") }} · {{ turmas_lista|length }}</p>
+<div class="card">
+  <form action="/admin/turma" method="post">
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Nome da turma") }}</label>
+        <input name="nome" required placeholder="Ex.: 4º Ano B">
+      </div>
+      <div>
+        <label>{{ t("Professor responsável") }}</label>
+        <select name="professor_id">
+          <option value="">— {{ t("Sem professor") }} —</option>
+          {% for p in professores %}<option value="{{ p.id }}">{{ p.nome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px">{{ t("Criar turma") }}</button>
+  </form>
+</div>
+<div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Turma") }}</th>
+      <th style="padding:12px 16px">{{ t("Professor responsável") }}</th>
+      <th style="padding:12px 16px">{{ t("Alunos") }}</th>
+      <th style="padding:12px 16px">{{ t("Status") }}</th>
+      <th style="padding:12px 16px;text-align:right">{{ t("Ações") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for tu in turmas_lista %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px;font-weight:700">{{ tu.nome }}</td>
+        <td style="padding:12px 16px">{{ tu.professor_nome or '—' }}</td>
+        <td style="padding:12px 16px">{{ alunos_por_turma.get(tu.nome, 0) }}</td>
+        <td style="padding:12px 16px">{% if tu.ativo %}<span class="pill green">● {{ t("Ativo") }}</span>{% else %}<span class="pill gray">○ {{ t("Inativo") }}</span>{% endif %}</td>
+        <td style="padding:12px 16px;text-align:right">
+          <form action="/admin/turma/{{ tu.id }}/status" method="post" style="display:inline">
+            <button class="btn" style="padding:7px 12px;font-size:12.5px;background:{{ '#6b7280' if tu.ativo else 'var(--green)' }}">{{ t("Desativar") if tu.ativo else t("Ativar") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ---- alunos (roster) ---- #}
+<p class="section-title">{{ t("Alunos") }} · {{ alunos|length }}</p>
+<div class="card">
+  <form action="/admin/aluno" method="post">
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Nome") }}</label>
+        <input name="nome" required placeholder="Ex.: João Silva">
+      </div>
+      <div>
+        <label>{{ t("Turma") }}</label>
+        <select name="turma">
+          {% for tm in turmas %}<option value="{{ tm.nome }}">{{ tm.nome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Matrícula (deixe em branco para gerar)") }}</label>
+        <input name="matricula" placeholder="{{ escola.cidade and '' }}2026…">
+      </div>
+      <div>
+        <label>{{ t("Responsável (família)") }}</label>
+        <select name="responsavel_id">
+          <option value="">— {{ t("Sem vínculo") }} —</option>
+          {% for f in familias %}<option value="{{ f.id }}">{{ f.nome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px">{{ t("Criar aluno") }}</button>
+  </form>
+</div>
+<div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Nome") }}</th>
+      <th style="padding:12px 16px">{{ t("Matrícula") }}</th>
+      <th style="padding:12px 16px">{{ t("Turma") }}</th>
+      <th style="padding:12px 16px">{{ t("Responsável") }}</th>
+      <th style="padding:12px 16px">{{ t("Status") }}</th>
+      <th style="padding:12px 16px;text-align:right">{{ t("Ações") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for al in alunos %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px;font-weight:700">{{ al.nome }}</td>
+        <td style="padding:12px 16px;font-family:monospace">{{ al.matricula }}</td>
+        <td style="padding:12px 16px">{{ al.turma or '—' }}</td>
+        <td style="padding:12px 16px">{{ resp_nomes.get(al.responsavel_id, '—') }}</td>
+        <td style="padding:12px 16px">{% if al.ativo %}<span class="pill green">● {{ t("Ativo") }}</span>{% else %}<span class="pill gray">○ {{ t("Inativo") }}</span>{% endif %}</td>
+        <td style="padding:12px 16px;text-align:right;white-space:nowrap">
+          <form action="/admin/aluno/{{ al.id }}/status" method="post" style="display:inline">
+            <button class="btn" style="padding:7px 12px;font-size:12.5px;background:{{ '#6b7280' if al.ativo else 'var(--green)' }}">{{ t("Desativar") if al.ativo else t("Ativar") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" style="padding:16px;color:var(--muted)">{{ t("Nenhum aluno cadastrado ainda.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ---- importar por CSV ---- #}
+<p class="section-title">{{ t("Importar por planilha (CSV)") }}</p>
+<div class="card">
+  <p style="margin:0 0 14px;color:var(--muted);font-size:14px">
+    {{ t("Envie um CSV para cadastrar vários alunos de uma vez (e criar as famílias responsáveis).") }}<br>
+    <span class="muted small">{{ t("Colunas") }}: <code>aluno, turma, matricula, responsavel, email</code></span>
+  </p>
+  <form action="/admin/importar" method="post" enctype="multipart/form-data">
+    <input type="file" name="arquivo" accept=".csv,text/csv" required
+           style="padding:10px;background:var(--soft)">
+    <button class="btn" style="margin-top:14px">📥 {{ t("Importar") }}</button>
+  </form>
+</div>
+
+<script>
+  function toggleFam() {
+    var pap = document.getElementById('papel-select').value;
+    document.getElementById('fam-fields').style.display = (pap === 'familia') ? 'grid' : 'none';
+  }
+  toggleFam();
+</script>
+{% endblock %}

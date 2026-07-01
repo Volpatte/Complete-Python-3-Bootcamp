@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% set active = 'prof' %}
+{% block title %}{{ t("Professor") }} · Cora{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 2px">{{ t("Olá,") }} {{ user.nome }} 👋</h2>
+<p class="muted small">{{ t("Componha um comunicado e deixe a IA preparar antes de enviar") }}</p>
+{% if enviado %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">{{ t("✅ Comunicado enviado e já disponível no feed das famílias!") }}</div>{% endif %}
+{% if ok == 'tarefa' %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">{{ t("✅ Tarefa lançada — já aparece para as famílias da turma.") }}</div>{% endif %}
+{% if ok == 'evento' %}<div class="card" style="background:#defaf0;color:#0d7a5f;border:0;margin-top:14px;padding:14px 18px">{{ t("✅ Evento criado — já aparece na agenda das famílias.") }}</div>{% endif %}
+
+<div class="grid cols-2" style="margin-top:18px">
+  <div class="card">
+    <h3>{{ t("Novo comunicado") }}</h3>
+    <p class="sub">{{ t("A IA gera resumo, sugere prioridade e traduz automaticamente") }}</p>
+    <form action="/professor/preview" method="post">
+      <label>{{ t("Turma") }}</label>
+      <select name="turma">
+        <option>{{ t("Toda a escola") }}</option>
+        {% for t in turmas %}<option>{{ t.nome }}</option>{% endfor %}
+      </select>
+      <label>{{ t("Título") }}</label>
+      <input name="titulo" placeholder="{{ t('Ex.: Prova de Matemática na sexta') }}"
+             value="{{ preview.titulo if preview and preview.titulo != '(sem título)' else '' }}">
+      <label>{{ t("Mensagem") }}</label>
+      <textarea name="corpo" rows="6" placeholder="{{ t('Escreva o comunicado…') }}">{{ preview.corpo if preview else '' }}</textarea>
+      <div style="margin-top:14px"><button class="btn block" type="submit">{{ t("✨ Pré-processar com IA") }}</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>{{ t("Prévia inteligente") }}</h3>
+    {% if not preview %}
+      <p class="sub">{{ t("Preencha o formulário ao lado e clique em pré-processar para ver como a IA transforma seu texto antes do envio.") }}</p>
+      <div class="ai-box">
+        <div class="head">{{ t("✨ O que a IA faz aqui") }}</div>
+        <ul class="small" style="margin:0;padding-left:18px;color:var(--muted)">
+          <li>{{ t("Resume o comunicado em 1 frase para o feed da família") }}</li>
+          <li>{{ t("Sugere a prioridade (urgente / importante / informativo)") }}</li>
+          <li>{{ t("Traduz automaticamente para famílias estrangeiras") }}</li>
+          <li>{{ t("Recomenda se deve pedir confirmação de leitura") }}</li>
+        </ul>
+      </div>
+    {% else %}
+      <span class="pill" style="background:{{ preview.prioridade.cor }}1a;color:{{ preview.prioridade.cor }}">
+        {{ t("Prioridade sugerida:") }} {{ t(preview.prioridade.rotulo) }}
+      </span>
+      <div style="font-weight:700;margin:10px 0 2px">{{ preview.titulo }}</div>
+      <div class="muted small">{{ t("Para:") }} {{ preview.turma }}</div>
+
+      <div class="ai-box">
+        <div class="head">{{ t("✨ Resumo para o feed") }}</div>
+        <div>{{ preview.resumo or '—' }}</div>
+      </div>
+
+      <div class="small"><strong>{{ t("Tradução automática:") }}</strong></div>
+      {% for t in preview.traducoes %}<span class="pill blue" style="margin:4px 4px 0 0">{{ t }}</span>{% endfor %}
+
+      <form action="/professor/enviar" method="post" style="margin-top:16px">
+        <input type="hidden" name="titulo" value="{{ preview.titulo }}">
+        <input type="hidden" name="corpo" value="{{ preview.corpo }}">
+        <input type="hidden" name="turma" value="{{ preview.turma }}">
+        <label class="small" style="display:flex;align-items:center;gap:8px;font-weight:600">
+          <input type="checkbox" name="precisa_confirmar" value="true" style="width:auto"> {{ t("Pedir confirmação de leitura") }}
+        </label>
+        <button class="btn block" type="submit" style="margin-top:10px">{{ t("Enviar comunicado") }}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div>
+    <p class="section-title">{{ t("Lançar tarefa") }}</p>
+    <div class="card">
+      <p class="sub">{{ t("Aparece no app das famílias da turma") }}</p>
+      <form action="/professor/tarefa" method="post">
+        <label>{{ t("Turma") }}</label>
+        <select name="turma">
+          <option>{{ t("Toda a escola") }}</option>
+          {% for t in turmas %}<option>{{ t.nome }}</option>{% endfor %}
+        </select>
+        <label>{{ t("Disciplina") }}</label>
+        <input name="disciplina" placeholder="{{ t('Ex.: Matemática') }}" required>
+        <label>{{ t("Título") }}</label>
+        <input name="titulo" placeholder="{{ t('Ex.: Lista de frações 1 a 12') }}" required>
+        <label>{{ t("Entrega") }}</label>
+        <input name="entrega" type="date">
+        <div style="margin-top:14px"><button class="btn block" type="submit">{{ t("Lançar tarefa") }}</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <p class="section-title">{{ t("Criar evento na agenda") }}</p>
+    <div class="card">
+      <p class="sub">{{ t("Aparece na agenda das famílias") }}</p>
+      <form action="/professor/evento" method="post">
+        <label>{{ t("Título") }}</label>
+        <input name="titulo" placeholder="{{ t('Ex.: Feira de Ciências') }}" required>
+        <label>{{ t("Data") }}</label>
+        <input name="data_evento" type="date">
+        <label>{{ t("Tipo") }}</label>
+        <select name="tipo">
+          <option value="evento">{{ t("Evento") }}</option>
+          <option value="prova">{{ t("Prova") }}</option>
+          <option value="reuniao">{{ t("Reunião") }}</option>
+        </select>
+        <div style="margin-top:14px"><button class="btn block" type="submit">{{ t("Criar evento") }}</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<p class="section-title">{{ t("Tarefas lançadas") }}</p>
+<div class="card">
+  <ul class="list">
+    {% for tf in tarefas %}
+    <li>
+      <div><strong>{{ t(tf.disciplina) }}</strong> — {{ t(tf.titulo) }} <span class="muted small">· {{ t(tf.turma) }}</span></div>
+      <span class="pill {{ 'green' if tf.status=='entregue' else 'amber' }}">{{ t("entrega") }} {{ tf.entrega|dia }}</span>
+    </li>
+    {% else %}
+    <li><span class="muted small">{{ t("Nenhuma tarefa lançada.") }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<p class="section-title">{{ t("Próximos eventos") }}</p>
+<div class="card">
+  <ul class="list">
+    {% for e in eventos %}
+    <li>
+      <div><strong>{{ e.data|dia }}</strong> · {{ t(e.titulo) }}</div>
+      <span class="pill {{ 'red' if e.tipo=='urgente' else ('amber' if e.tipo=='prova' else 'blue') }}">{{ e.tipo }}</span>
+    </li>
+    {% else %}
+    <li><span class="muted small">{{ t("Nenhum evento.") }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<p class="section-title">{{ t("Minhas turmas") }}</p>
+<div class="grid cols-4">
+  {% for t in turmas %}
+  <div class="card kpi">
+    <div class="num">{{ t.alunos }}</div>
+    <div class="lbl">{{ t.nome }}</div>
+    <div class="muted small" style="margin-top:4px">{{ t.professor }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+/* ============================================================
+   Cora — tema PREMIUM mobile-first (vibe Nubank + social)
+   App da Família. Telas de gestão (coord/prof) usam style.css.
+   ============================================================ */
+
+:root {
+  /* Cora — paleta quente/humana (coral + rosa, com pôr-do-sol) */
+  --grape: #ff3d71;     /* coral-rosa, o "coração" da marca */
+  --grape-2: #d6336c;   /* rosa profundo */
+  --indigo: #ff7a59;    /* coral-laranja p/ gradiente sunset */
+  --ink: #2b1622;
+  --surface: #ffffff;
+  --surface-2: #fff4f5;
+  --muted: #927982;
+  --line: #ffe1e6;
+  --lime: #ffd166;      /* dourado quente (acento) */
+  --cyan: #ff8fab;      /* rosa claro (acento) */
+  --amber: #fbbf24;
+  --red: #fb5d6a;
+  --green: #2bd6a4;
+  --shadow: 0 10px 30px rgba(214, 51, 108, .16);
+  --shadow-sm: 0 4px 16px rgba(43, 22, 34, .08);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body.appbg {
+  margin: 0;
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #ff5d8f 0%, transparent 50%),
+    radial-gradient(1000px 700px at 110% 10%, #ff7a59 0%, transparent 45%),
+    linear-gradient(160deg, #4a0f2e, #1c0712 60%);
+  display: grid;
+  place-items: start center;
+  padding: 28px 16px 60px;
+  color: var(--ink);
+}
+
+/* ---- moldura do celular ---- */
+.phone {
+  width: 100%;
+  max-width: 412px;
+  background: var(--surface-2);
+  border-radius: 42px;
+  box-shadow: 0 40px 80px rgba(0,0,0,.45), 0 0 0 10px rgba(255,255,255,.06);
+  overflow: hidden;
+  position: relative;
+  min-height: 860px;
+  display: flex;
+  flex-direction: column;
+}
+.notch {
+  height: 30px; display: grid; place-items: center;
+}
+.notch::after {
+  content: ""; width: 130px; height: 26px; background: #0b0820;
+  border-radius: 0 0 18px 18px;
+}
+.screen { flex: 1; overflow-y: auto; padding-bottom: 96px; }
+.screen::-webkit-scrollbar { width: 0; }
+
+/* ---- header de saudação (estilo Nubank) ---- */
+.app-head {
+  background: linear-gradient(150deg, var(--grape), var(--grape-2) 70%);
+  color: #fff;
+  padding: 18px 22px 26px;
+  border-radius: 0 0 28px 28px;
+}
+.app-head .row { display: flex; align-items: center; justify-content: space-between; }
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--lime), var(--cyan));
+  display: grid; place-items: center; font-weight: 800; color: #14112b;
+}
+.app-head h1 { font-size: 22px; margin: 18px 0 2px; font-weight: 800; letter-spacing: -.02em; }
+.app-head .sub { opacity: .85; font-size: 13px; margin: 0; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 14px; border: 0;
+  background: rgba(255,255,255,.16); color: #fff; font-size: 18px; cursor: pointer;
+  display: grid; place-items: center; position: relative;
+}
+.dot {
+  position: absolute; top: 8px; right: 9px; width: 9px; height: 9px;
+  background: var(--lime); border-radius: 50%; border: 2px solid var(--grape);
+}
+
+/* ---- ações rápidas (grid Nubank) ---- */
+.quick {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  margin: -18px 16px 0; background: #fff; border-radius: 22px;
+  padding: 14px 8px; box-shadow: var(--shadow); position: relative; z-index: 2;
+}
+.quick a { text-align: center; color: var(--ink); font-size: 10px; font-weight: 600; }
+.quick .qi {
+  width: 44px; height: 44px; margin: 0 auto 5px; border-radius: 14px;
+  background: var(--surface-2); display: grid; place-items: center; font-size: 19px;
+}
+.quick a:active .qi { transform: scale(.92); }
+
+.pad { padding: 0 16px; }
+.sec-h { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px; }
+.sec-h h2 { font-size: 16px; margin: 0; font-weight: 800; letter-spacing: -.01em; }
+.sec-h a { font-size: 13px; color: var(--grape); font-weight: 700; }
+
+/* ---- stories ---- */
+.stories { display: flex; gap: 14px; overflow-x: auto; padding: 4px 16px 6px; }
+.stories::-webkit-scrollbar { height: 0; }
+.story { text-align: center; flex: 0 0 auto; width: 66px; }
+.story .ring {
+  width: 64px; height: 64px; border-radius: 50%; padding: 3px;
+  background: conic-gradient(from 210deg, var(--grape), var(--cyan), var(--lime), var(--grape));
+}
+.story.read .ring { background: var(--line); }
+.story .ring > div {
+  width: 100%; height: 100%; border-radius: 50%; background: #fff;
+  display: grid; place-items: center; font-size: 24px;
+  border: 2px solid #fff;
+}
+.story span { display: block; font-size: 11px; margin-top: 6px; color: var(--muted); font-weight: 600; }
+
+/* ---- cards do feed (social) ---- */
+.post {
+  background: #fff; border-radius: 22px; padding: 16px; margin-bottom: 14px;
+  box-shadow: var(--shadow-sm); display: block; color: inherit;
+}
+.post .top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.post .pin {
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+  font-size: 18px; color: #fff;
+}
+.post .who { font-weight: 700; font-size: 14px; line-height: 1.2; }
+.post .when { font-size: 12px; color: var(--muted); }
+.post .title { font-weight: 800; font-size: 16px; margin: 2px 0 8px; letter-spacing: -.01em; }
+
+.ai-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #ffe3ea, #ffd9e0);
+  color: #d6336c; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+}
+.ai-summary {
+  background: var(--surface-2); border-radius: 14px; padding: 11px 13px; margin: 10px 0;
+  font-size: 13.5px; color: #2a2546; line-height: 1.45;
+}
+.tag {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800;
+  padding: 4px 10px; border-radius: 999px;
+}
+.tag.red { background: #ffe9eb; color: #e11d48; }
+.tag.amber { background: #fff5e0; color: #d97706; }
+.tag.blue { background: #e6f0ff; color: #2563eb; }
+.tag.green { background: #defaf0; color: #0d9f76; }
+
+.post .actions { display: flex; gap: 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.post .actions button {
+  border: 0; background: none; color: var(--muted); font-weight: 700; font-size: 13px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.post .actions button:active { color: var(--grape); transform: scale(.95); }
+
+/* ---- bottom nav ---- */
+.tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,.85); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 10px 6px 22px;
+}
+.tabbar a { text-align: center; color: var(--muted); font-size: 10.5px; font-weight: 700; }
+.tabbar a .ti { font-size: 21px; display: block; margin-bottom: 2px; }
+.tabbar a.active { color: var(--grape); }
+
+/* ---- botões ---- */
+.cta {
+  display: block; width: 100%; text-align: center; border: 0; cursor: pointer;
+  background: linear-gradient(135deg, var(--grape), var(--indigo));
+  color: #fff; font-weight: 800; font-size: 15px; padding: 15px; border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.cta:active { transform: scale(.98); }
+.cta.soft { background: var(--surface-2); color: var(--grape); box-shadow: none; }
+
+/* ---- chat ---- */
+.chat-head {
+  background: linear-gradient(150deg, var(--grape), var(--grape-2));
+  color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px;
+  border-radius: 0 0 22px 22px;
+}
+.chat-head .back { color: #fff; font-size: 22px; text-decoration: none; }
+.conv-item {
+  display: flex; gap: 12px; align-items: center; padding: 14px 16px;
+  border-bottom: 1px solid var(--line); color: inherit;
+}
+.conv-item .pin { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 20px; color:#fff; flex: 0 0 auto; }
+.conv-item .body { flex: 1; min-width: 0; }
+.conv-item .body .n { font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; }
+.conv-item .body .n span { font-size: 11px; color: var(--muted); font-weight: 600; }
+.conv-item .body .p { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unread { background: var(--grape); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; }
+
+.bubbles { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
+.bubble.them { background: #fff; align-self: flex-start; border-bottom-left-radius: 6px; box-shadow: var(--shadow-sm); }
+.bubble.me { background: linear-gradient(135deg, var(--grape), var(--indigo)); color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; }
+.bubble .t { font-size: 10px; opacity: .7; margin-top: 4px; }
+.smart-replies { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 16px; }
+.smart-replies .sr {
+  border: 1.5px solid var(--grape); color: var(--grape); background: #fff;
+  border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+
+/* ---- detalhe do comunicado ---- */
+.detail-hero { background: linear-gradient(150deg, var(--grape), var(--grape-2)); color: #fff; padding: 18px; border-radius: 0 0 24px 24px; }
+.detail-body { padding: 16px; }
+.detail-body p { font-size: 15px; line-height: 1.6; white-space: pre-line; color: #2a2546; }
+
+.list2 { background:#fff; border-radius: 18px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.list2 .it { display:flex; justify-content: space-between; align-items:center; gap:12px; padding: 14px 16px; border-top: 1px solid var(--line); }
+.list2 .it:first-child { border-top: 0; }
+.list2 .it .l { font-weight: 700; font-size: 14px; }
+.list2 .it .s { font-size: 12px; color: var(--muted); }
+
+.muted { color: var(--muted); }
+.center { text-align:center; }
+
+/* ---- botão flutuante da Cora IA (menu suspenso) ---- */
+.fab-cora {
+  position: absolute; right: 16px; bottom: 104px; z-index: 40;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px 12px 12px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--grape), var(--indigo));
+  color: #fff; text-decoration: none; font-weight: 800; font-size: 14px;
+  box-shadow: 0 12px 28px rgba(214,51,108,.45);
+}
+.fab-cora:active { transform: scale(.95); }
+.fab-cora .fab-ico {
+  width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.22);
+  display: grid; place-items: center; font-size: 19px;
+}

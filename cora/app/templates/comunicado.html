@@ -1,0 +1,34 @@
+{% extends "app_shell.html" %}
+{% set tab = 'inicio' %}
+{% block title %}{{ t(c.titulo) }} · Cora{% endblock %}
+{% block screen %}
+
+<div class="detail-hero">
+  <a href="/familia" class="back" style="color:#fff;text-decoration:none;font-size:22px">‹ {{ t("voltar") }}</a>
+  <div style="margin-top:12px">
+    <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">{{ t(prioridade.rotulo) }}</span>
+    {% if c.precisa_confirmar %}<span class="tag" style="background:#fbbf24;color:#3b2c00">{{ t("precisa confirmar") }}</span>{% endif %}
+  </div>
+  <h1 style="font-size:21px;margin:12px 0 4px;letter-spacing:-.02em">{{ t(c.titulo) }}</h1>
+  <div style="font-size:13px;opacity:.85">{{ t(c.autor) }} · {{ t(c.turma) }} · {{ c.enviado_em|data_hora }}</div>
+</div>
+
+<div class="detail-body">
+  <span class="ai-chip">✨ {{ t("Resumo &amp; tradução") }} · Cora IA</span>
+  <div class="ai-summary" style="margin-top:8px">{{ resumo }}</div>
+  <div class="muted" style="font-size:12px;margin:-4px 0 14px">🌐 {{ t(traducao) }} · {{ t("toque para outro idioma") }}</div>
+
+  <p>{{ t(c.corpo) }}</p>
+
+  <span class="ai-chip" style="margin-top:8px">✨ {{ t("Respostas sugeridas") }}</span>
+  <div class="smart-replies" style="padding:10px 0">
+    {% for s in sugestoes %}<div class="sr">{{ t(s) }}</div>{% endfor %}
+  </div>
+
+  {% if acao %}
+  <button class="cta" style="margin-top:8px">{{ t(acao) }}</button>
+  {% endif %}
+  <button class="cta soft" style="margin-top:10px">↗️ {{ t("Receber este aviso no") }} WhatsApp</button>
+</div>
+
+{% endblock %}

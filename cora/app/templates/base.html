@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cora{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand"><span class="logo">♥</span> Cora</a>
+    <nav class="nav">
+      <a href="/coordenacao" class="{{ 'active' if active=='coord' }}">{{ t("Coordenação") }}</a>
+      <a href="/professor" class="{{ 'active' if active=='prof' }}">{{ t("Professor") }}</a>
+      <a href="/familia" class="{{ 'active' if active=='fam' }}">{{ t("Família") }}</a>
+      {% if is_admin %}<a href="/admin" class="{{ 'active' if active=='admin' }}">{{ t("Gestão") }}</a>{% endif %}
+      {% if user and user.papel in ('professor', 'coordenacao') %}<a href="/mensagens" class="{{ 'active' if active=='msg' }}">{{ t("Mensagens") }}</a>{% endif %}
+      {% if user and user.papel == 'coordenacao' %}<a href="/whatsapp" class="{{ 'active' if active=='wa' }}">WhatsApp</a>{% endif %}
+      {% if user and user.papel == 'coordenacao' %}<a href="/saude" class="{{ 'active' if active=='saude' }}">{{ t("Saúde") }}</a>{% endif %}
+      <span class="langsel">
+        {% for code, label in langs.items() %}<a href="/lang/{{ code }}" class="{{ 'on' if code == lang }}">{{ label }}</a>{% endfor %}
+      </span>
+      {% if user %}<a href="/logout" style="color:var(--muted)">{{ t("Sair") }}</a>{% endif %}
+    </nav>
+  </header>
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
