@@ -48,9 +48,6 @@
       bottom:-220px; right:-140px}
     .glow{position:absolute; z-index:-1; width:360px; height:360px; border-radius:50%; filter:blur(70px);
       background:radial-gradient(circle,#e21e79,transparent 60%); top:40%; left:50%; transform:translate(-50%,-40%); opacity:.5}
-    .eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:600;
-      color:#fff; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18);
-      padding:7px 15px; border-radius:999px; margin-bottom:26px; backdrop-filter:blur(4px)}
     .stage h1{color:#fff; font-weight:800; letter-spacing:-.03em; line-height:1.04;
       font-size:clamp(38px,6.4vw,72px); margin:0 auto; max-width:15ch}
     .stage h1 .accent{background:linear-gradient(120deg,#ffd0dc,#ffb3c8 40%,#d8c4ff);
@@ -64,20 +61,6 @@
     .btn.primary:hover{transform:translateY(-2px); box-shadow:0 16px 34px rgba(0,0,0,.28)}
     .btn.line{background:transparent; color:#fff; border:1px solid rgba(255,255,255,.32)}
     .btn.line:hover{background:rgba(255,255,255,.1)}
-
-    /* floating proof chips */
-    .chip{position:absolute; z-index:2; display:flex; align-items:center; gap:9px;
-      background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.2); color:#fff;
-      padding:11px 15px; border-radius:16px; font-size:13px; font-weight:600; backdrop-filter:blur(8px);
-      box-shadow:0 12px 30px rgba(0,0,0,.2); animation:float 6s ease-in-out infinite}
-    .chip .dot{width:22px; height:22px; border-radius:7px; background:var(--grad); display:grid; place-items:center; font-size:12px}
-    .chip.a{top:76px; left:5%; animation-delay:0s}
-    .chip.b{bottom:96px; left:8%; animation-delay:1.4s}
-    .chip.c{top:110px; right:5%; animation-delay:.7s}
-    .chip.d{bottom:86px; right:8%; animation-delay:2.1s}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-    @media (max-width:900px){.chip{display:none}}
-    @media (prefers-reduced-motion:reduce){.chip{animation:none}}
 
     /* ---------- features ---------- */
     section.block{padding:56px 0}
@@ -150,12 +133,6 @@
     <div class="shell">
       <div class="stage">
         <span class="glow"></span>
-        <div class="chip a"><span class="dot">🧠</span> Resume o que importa</div>
-        <div class="chip b"><span class="dot">📊</span> Famílias em risco, à vista</div>
-        <div class="chip c"><span class="dot">💬</span> Chega no WhatsApp</div>
-        <div class="chip d"><span class="dot">⚡</span> Responde em segundos</div>
-
-        <span class="eyebrow">💜 Escola e família, no mesmo coração</span>
         <h1>Cuidamos de quem <span class="accent">protege o nosso futuro</span>.</h1>
         <p class="lede">Cora aproxima escola e família com o cuidado no centro. Inteligência que
           resume o que importa, dados que viram decisão e a conversa fluindo por onde a família já está.</p>
