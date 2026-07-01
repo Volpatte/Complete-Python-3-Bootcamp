@@ -37,7 +37,7 @@
     <li>
       <div>
         <strong>{{ e.destinatario_nome }}</strong>
-        <div class="muted small">{{ e.resumo }} · <span class="muted">{{ e.referencia }}</span></div>
+        <div class="muted small">{{ t(e.resumo) }} · <span class="muted">{{ e.referencia }}</span></div>
       </div>
       <span class="pill {{ cor }}">
         {% if e.status == 'lido' %}✓✓ {{ t("lido") }}{% elif e.status == 'entregue' %}✓✓ {{ t("entregue") }}{% elif e.status == 'enviado' %}✓ {{ t("enviado") }}{% else %}{{ t("falhou") }}{% endif %}

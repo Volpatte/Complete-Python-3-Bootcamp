@@ -42,7 +42,7 @@
       </div>
     {% else %}
       <span class="pill" style="background:{{ preview.prioridade.cor }}1a;color:{{ preview.prioridade.cor }}">
-        {{ t("Prioridade sugerida:") }} {{ preview.prioridade.rotulo }}
+        {{ t("Prioridade sugerida:") }} {{ t(preview.prioridade.rotulo) }}
       </span>
       <div style="font-weight:700;margin:10px 0 2px">{{ preview.titulo }}</div>
       <div class="muted small">{{ t("Para:") }} {{ preview.turma }}</div>
@@ -116,7 +116,7 @@
   <ul class="list">
     {% for tf in tarefas %}
     <li>
-      <div><strong>{{ tf.disciplina }}</strong> — {{ tf.titulo }} <span class="muted small">· {{ tf.turma }}</span></div>
+      <div><strong>{{ t(tf.disciplina) }}</strong> — {{ t(tf.titulo) }} <span class="muted small">· {{ t(tf.turma) }}</span></div>
       <span class="pill {{ 'green' if tf.status=='entregue' else 'amber' }}">{{ t("entrega") }} {{ tf.entrega|dia }}</span>
     </li>
     {% else %}
@@ -130,7 +130,7 @@
   <ul class="list">
     {% for e in eventos %}
     <li>
-      <div><strong>{{ e.data|dia }}</strong> · {{ e.titulo }}</div>
+      <div><strong>{{ e.data|dia }}</strong> · {{ t(e.titulo) }}</div>
       <span class="pill {{ 'red' if e.tipo=='urgente' else ('amber' if e.tipo=='prova' else 'blue') }}">{{ e.tipo }}</span>
     </li>
     {% else %}

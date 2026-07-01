@@ -29,25 +29,28 @@ from __future__ import annotations
 
 import re
 
-from . import llm
+from . import i18n, llm
 
 # Palavras que elevam a prioridade de um comunicado.
 _URGENTE = ("urgente", "emergência", "emergencial", "imediat", "antecipad", "cancelad", "acidente")
 _ALTA = ("prova", "reunião", "reuniao", "vencimento", "boleto", "mensalidade", "autoriza", "saída", "saida")
 
 
-def resumir(texto: str, max_frases: int = 1) -> str:
+def resumir(texto: str, max_frases: int = 1, lang: str = "pt") -> str:
     """Resumo de 1 frase do comunicado para o feed da família.
 
     Usa a Claude API quando disponível (resumo abstrativo); senão, cai num
-    resumo extrativo simples (primeiras frases com conteúdo).
+    resumo extrativo simples (primeiras frases com conteúdo). O resumo sai no
+    idioma pedido (`lang`) quando a API está ativa; offline, ele espelha o
+    idioma do próprio texto recebido.
     """
     if texto and llm.disponivel():
+        idioma = i18n.NOME_IDIOMA.get(lang, "português do Brasil")
         r = llm.completar(
             system=(
                 "Você é a Cora, assistente de uma escola. Resuma o comunicado a seguir "
-                "para um responsável, em UMA frase curta, clara e acolhedora, em "
-                "português do Brasil. Responda apenas com o resumo, sem aspas nem rótulos."
+                f"para um responsável, em UMA frase curta, clara e acolhedora, em {idioma}. "
+                "Responda apenas com o resumo, sem aspas nem rótulos."
             ),
             user=texto,
             max_tokens=120,
@@ -106,16 +109,17 @@ def traduzir_rotulo(idioma_destino: str) -> str:
     return nomes.get(idioma_destino, "Tradução automática")
 
 
-def insight_coordenacao(engajamento: list[dict]) -> str:
+def insight_coordenacao(engajamento: list[dict], lang: str = "pt") -> str:
     """Gera um insight em linguagem natural para a coordenação.
 
-    Com a Claude API, envia os números e recebe análise + recomendação; sem
-    ela, monta um insight a partir do pior caso.
+    Com a Claude API, envia os números e recebe análise + recomendação no
+    idioma pedido; sem ela, monta um insight localizado a partir do pior caso.
     """
     pior = min(engajamento, key=lambda t: t["taxa_leitura"])
     media = round(sum(t["taxa_leitura"] for t in engajamento) / len(engajamento))
 
     if llm.disponivel():
+        idioma = i18n.NOME_IDIOMA.get(lang, "português do Brasil")
         linhas = "\n".join(
             f"- {t['turma']}: leitura {t['taxa_leitura']}%, {t['risco']} famílias em risco"
             for t in engajamento
@@ -125,7 +129,7 @@ def insight_coordenacao(engajamento: list[dict]) -> str:
                 "Você é a Cora, analista de engajamento de uma escola. A partir dos "
                 "dados de leitura por turma, escreva um insight de 2 a 3 frases para a "
                 "coordenação: aponte o ponto de atenção e dê UMA recomendação prática "
-                "(ex.: comunicado por WhatsApp, contato individual). Português do Brasil, "
+                f"(ex.: comunicado por WhatsApp, contato individual). Escreva em {idioma}, "
                 "tom direto e profissional."
             ),
             user=f"Taxa média: {media}%.\nPor turma:\n{linhas}",
@@ -135,9 +139,24 @@ def insight_coordenacao(engajamento: list[dict]) -> str:
         if r:
             return r
 
-    return (
-        f"A taxa média de leitura está em {media}%. A turma {pior['turma']} é o "
-        f"ponto de atenção ({pior['taxa_leitura']}%), com {pior['risco']} famílias "
-        f"em risco de desengajamento. Recomendo um comunicado direcionado via "
-        f"WhatsApp e contato individual com as 3 famílias mais inativas."
-    )
+    plantilhas = {
+        "pt": (
+            f"A taxa média de leitura está em {media}%. A turma {pior['turma']} é o "
+            f"ponto de atenção ({pior['taxa_leitura']}%), com {pior['risco']} famílias "
+            f"em risco de desengajamento. Recomendo um comunicado direcionado via "
+            f"WhatsApp e contato individual com as 3 famílias mais inativas."
+        ),
+        "en": (
+            f"The average read rate is {media}%. Class {pior['turma']} is the attention "
+            f"point ({pior['taxa_leitura']}%), with {pior['risco']} families at risk of "
+            f"disengaging. I recommend a targeted announcement via WhatsApp and "
+            f"individual contact with the 3 most inactive families."
+        ),
+        "es": (
+            f"La tasa media de lectura es del {media}%. El grupo {pior['turma']} es el "
+            f"punto de atención ({pior['taxa_leitura']}%), con {pior['risco']} familias en "
+            f"riesgo de desenganche. Recomiendo un comunicado dirigido por WhatsApp y "
+            f"contacto individual con las 3 familias más inactivas."
+        ),
+    }
+    return plantilhas.get(lang, plantilhas["pt"])

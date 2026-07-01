@@ -16,11 +16,11 @@
   <div class="post" style="display:flex;gap:14px;align-items:center">
     <div style="text-align:center;flex:0 0 auto">
       <div style="font-size:22px;font-weight:800;color:var(--grape)">{{ e.data.strftime('%d') }}</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase">{{ ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][e.data.month-1] }}</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase">{{ {'pt':['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],'en':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],'es':['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']}.get(lang, ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'])[e.data.month-1] }}</div>
     </div>
     <div style="flex:1">
-      <div style="font-weight:800;font-size:15px">{{ e.titulo }}</div>
-      <span class="tag {{ 'red' if e.tipo=='urgente' else ('amber' if e.tipo=='prova' else 'blue') }}" style="margin-top:6px">{{ e.tipo }}</span>
+      <div style="font-weight:800;font-size:15px">{{ t(e.titulo) }}</div>
+      <span class="tag {{ 'red' if e.tipo=='urgente' else ('amber' if e.tipo=='prova' else 'blue') }}" style="margin-top:6px">{{ t(e.tipo) }}</span>
     </div>
   </div>
   {% endfor %}

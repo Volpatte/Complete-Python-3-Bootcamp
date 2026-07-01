@@ -233,3 +233,14 @@ def translator(lang: str):
         return table.get(text, text)
 
     return t
+
+
+def tr(text: str, lang: str) -> str:
+    """Tradução pontual no lado do servidor (fora de template)."""
+    if lang == DEFAULT:
+        return text
+    return TRANSLATIONS.get(lang, {}).get(text, text)
+
+
+# Nome do idioma por extenso (para instruir o LLM a responder no idioma certo).
+NOME_IDIOMA = {"pt": "português do Brasil", "en": "English", "es": "español"}

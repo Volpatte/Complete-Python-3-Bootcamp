@@ -61,7 +61,7 @@
         <span class="pill gray">+ {{ t("disponível") }}</span>
       {% endif %}
     </div>
-    <p class="muted small" style="margin:6px 0 0">{{ i.categoria }}</p>
+    <p class="muted small" style="margin:6px 0 0">{{ t(i.categoria) }}</p>
   </div>
   {% endfor %}
 </div>
@@ -71,9 +71,9 @@
   {% for c in comunicados %}
   <div class="card">
     {% set p = ai.prioridade(c.titulo, c.corpo) %}
-    <span class="pill" style="background:{{ p.cor }}1a;color:{{ p.cor }}">{{ p.rotulo }}</span>
-    <div style="font-weight:700;margin:8px 0 2px">{{ c.titulo }}</div>
-    <div class="muted small">{{ c.autor }} · {{ c.enviado_em|data_hora }}</div>
+    <span class="pill" style="background:{{ p.cor }}1a;color:{{ p.cor }}">{{ t(p.rotulo) }}</span>
+    <div style="font-weight:700;margin:8px 0 2px">{{ t(c.titulo) }}</div>
+    <div class="muted small">{{ t(c.autor) }} · {{ c.enviado_em|data_hora }}</div>
     <div style="margin-top:10px;font-size:13px">
       📖 {{ c.leram }}/{{ c.total_familias }} {{ t("leram") }}
       {% if c.precisa_confirmar %} · ✅ {{ c.confirmaram }} {{ t("confirmaram") }}{% endif %}

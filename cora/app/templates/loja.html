@@ -16,10 +16,10 @@
     {% for p in produtos %}
     <div class="post" style="padding:14px">
       <div style="font-size:40px;text-align:center;margin:4px 0 8px">{{ p.emoji }}</div>
-      <span class="tag blue">{{ p.tag }}</span>
-      <div style="font-weight:800;font-size:14px;margin:6px 0 2px;line-height:1.25">{{ p.nome }}</div>
+      <span class="tag blue">{{ t(p.tag) }}</span>
+      <div style="font-weight:800;font-size:14px;margin:6px 0 2px;line-height:1.25">{{ t(p.nome) }}</div>
       <div style="font-weight:800;color:var(--grape);font-size:16px;margin-bottom:10px">{{ p.preco }}</div>
-      <button class="cta" style="padding:11px;font-size:13px" data-nome="{{ p.nome }}" onclick="comprar(this)">{{ t("Comprar via Pix") }}</button>
+      <button class="cta" style="padding:11px;font-size:13px" data-nome="{{ t(p.nome) }}" onclick="comprar(this)">{{ t("Comprar via Pix") }}</button>
     </div>
     {% endfor %}
   </div>

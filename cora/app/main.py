@@ -166,13 +166,17 @@ def coordenacao(request: Request, db: Session = Depends(get_db), user=Depends(ex
             .order_by(models.Comunicado.enviado_em.desc())
         )
     )
-    engajamento = analytics.engajamento_por_turma(db, user.escola_id)
-    familias_risco = analytics.familias_em_risco(db, user.escola_id)
+    lang = i18n.resolve(request)
+    engajamento = analytics.engajamento_por_turma(db, user.escola_id, lang=lang)
+    familias_risco = analytics.familias_em_risco(db, user.escola_id, lang=lang)
     media_leitura = (
         round(sum(t["taxa_leitura"] for t in engajamento) / len(engajamento))
         if engajamento else 0
     )
-    insight = ai.insight_coordenacao(engajamento) if engajamento else "Ainda sem dados de leitura suficientes."
+    insight = (
+        ai.insight_coordenacao(engajamento, lang) if engajamento
+        else i18n.tr("Ainda sem dados de leitura suficientes.", lang)
+    )
     return templates.TemplateResponse(
         "coordenacao.html",
         _ctx(
@@ -677,13 +681,16 @@ def familia_comunicado(request: Request, cid: int, db: Session = Depends(get_db)
     db.commit()
 
     prio = ai.prioridade(c.titulo, c.corpo)
+    lang = i18n.resolve(request)
+    corpo_loc = i18n.tr(c.corpo, lang)
+    resumo = ai.resumir(corpo_loc, lang=lang)
     return templates.TemplateResponse(
         "comunicado.html",
         _ctx(
             request, user,
             c=c,
             prioridade=prio,
-            resumo=c.resumo or ai.resumir(c.corpo),
+            resumo=resumo,
             acao=ai.acao_sugerida(c.categoria, c.precisa_confirmar),
             sugestoes=ai.sugestoes_resposta(c.categoria, c.precisa_confirmar),
             traducao=ai.traduzir_rotulo(user.idioma),
