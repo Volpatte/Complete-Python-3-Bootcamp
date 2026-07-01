@@ -59,6 +59,18 @@ class Usuario(Base):
     escola: Mapped["Escola"] = relationship(back_populates="usuarios")
 
 
+class Turma(Base):
+    """Turma da escola — gerenciável (nome + professor responsável)."""
+
+    __tablename__ = "turmas"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    nome: Mapped[str] = mapped_column(String(60))
+    professor_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    professor_nome: Mapped[str] = mapped_column(String(120), default="")  # rótulo exibido
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 class Aluno(Base):
     """Aluno matriculado — o roster da escola.
 

@@ -74,15 +74,20 @@ def engajamento_por_turma(db, escola_id: int, hoje: date | None = None, lang: st
     hoje = hoje or date.today()
     fams, coms, lido_set, ultimo = _coletar(db, escola_id)
     perfis = [_perfil(f, coms, lido_set, ultimo, hoje, lang) for f in fams]
+    turmas = db.scalars(
+        select(models.Turma).where(
+            models.Turma.escola_id == escola_id, models.Turma.ativo.is_(True)
+        ).order_by(models.Turma.nome)
+    )
     out = []
-    for t in data.TURMAS:
-        membros = [p for p in perfis if p["turma"] == t["nome"]]
+    for t in turmas:
+        membros = [p for p in perfis if p["turma"] == t.nome]
         if not membros:
             continue
         taxa = round(sum(p["taxa"] for p in membros) / len(membros) * 100)
         risco = sum(1 for p in membros if p["risco"])
         out.append({
-            "turma": t["nome"], "taxa_leitura": taxa,
+            "turma": t.nome, "taxa_leitura": taxa,
             "famílias_ativas": len(membros) - risco, "risco": risco,
         })
     return out

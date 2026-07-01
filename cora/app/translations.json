@@ -292,7 +292,13 @@
     "Criar aluno": "Create student",
     "Nenhum aluno cadastrado ainda.": "No students registered yet.",
     "Lista de alunos atualizada.": "Student list updated.",
-    "Meus filhos": "My children"
+    "Meus filhos": "My children",
+    "Turmas": "Classes",
+    "Nome da turma": "Class name",
+    "Professor responsável": "Assigned teacher",
+    "Sem professor": "No teacher",
+    "Criar turma": "Create class",
+    "Turmas atualizadas.": "Classes updated."
   },
   "es": {
     "Oi,": "Hola,",
@@ -587,6 +593,12 @@
     "Criar aluno": "Crear alumno",
     "Nenhum aluno cadastrado ainda.": "Aún no hay alumnos registrados.",
     "Lista de alunos atualizada.": "Lista de alumnos actualizada.",
-    "Meus filhos": "Mis hijos"
+    "Meus filhos": "Mis hijos",
+    "Turmas": "Grupos",
+    "Nome da turma": "Nombre del grupo",
+    "Professor responsável": "Profesor responsable",
+    "Sem professor": "Sin profesor",
+    "Criar turma": "Crear grupo",
+    "Turmas atualizadas.": "Grupos actualizados."
   }
 }

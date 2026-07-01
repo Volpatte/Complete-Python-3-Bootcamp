@@ -189,6 +189,10 @@ def admin_home(
             .order_by(models.Aluno.turma, models.Aluno.nome)
         )
     )
+    alunos_por_turma: dict[str, int] = {}
+    for al in alunos:
+        if al.ativo:
+            alunos_por_turma[al.turma] = alunos_por_turma.get(al.turma, 0) + 1
     return templates.TemplateResponse(
         "admin.html",
         _ctx(
@@ -196,7 +200,11 @@ def admin_home(
             equipe=[u for u in usuarios if u.papel in models.PAPEIS_STAFF],
             familias=familias,
             alunos=alunos, resp_nomes={u.id: u.nome for u in familias},
-            papeis=models.PAPEIS_CRIAVEIS, turmas=data.TURMAS,
+            papeis=models.PAPEIS_CRIAVEIS,
+            turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True),
+            turmas_lista=_turmas_da_escola(db, user.escola_id, apenas_ativas=False),
+            professores=[u for u in usuarios if u.papel == models.PROFESSOR],
+            alunos_por_turma=alunos_por_turma,
             nova_senha=nova_senha, nome_reset=nome_reset, msg=msg, erro=erro,
         ),
     )
@@ -321,6 +329,46 @@ def admin_toggle_aluno(
     return RedirectResponse("/admin?msg=aluno", status_code=303)
 
 
+def _turmas_da_escola(db: Session, escola_id: int, apenas_ativas: bool = True):
+    q = select(models.Turma).where(models.Turma.escola_id == escola_id)
+    if apenas_ativas:
+        q = q.where(models.Turma.ativo.is_(True))
+    return list(db.scalars(q.order_by(models.Turma.nome)))
+
+
+@app.post("/admin/turma")
+def admin_criar_turma(
+    request: Request, nome: str = Form(...), professor_id: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    nome = nome.strip()
+    if not nome:
+        return RedirectResponse("/admin?erro=dados", status_code=303)
+    pid = int(professor_id) if professor_id.strip().isdigit() else None
+    pnome = ""
+    if pid is not None:  # o professor precisa ser um docente da mesma escola
+        p = db.get(models.Usuario, pid)
+        if p and p.escola_id == user.escola_id and p.papel == models.PROFESSOR:
+            pnome = p.nome
+        else:
+            pid = None
+    db.add(models.Turma(escola_id=user.escola_id, nome=nome, professor_id=pid, professor_nome=pnome, ativo=True))
+    db.commit()
+    return RedirectResponse("/admin?msg=turma", status_code=303)
+
+
+@app.post("/admin/turma/{tid}/status")
+def admin_toggle_turma(
+    request: Request, tid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    turma = db.get(models.Turma, tid)
+    if turma and turma.escola_id == user.escola_id:
+        turma.ativo = not turma.ativo
+        db.commit()
+    return RedirectResponse("/admin?msg=turma", status_code=303)
+
+
 # --------------------------------------------------------------------------- #
 # Coordenação
 # --------------------------------------------------------------------------- #
@@ -382,7 +430,7 @@ def professor(request: Request, db: Session = Depends(get_db), user=Depends(exig
         "professor.html",
         _ctx(
             request, user,
-            turmas=data.TURMAS,
+            turmas=_turmas_da_escola(db, user.escola_id),
             tarefas=_tarefas(db, user.escola_id),
             eventos=list(db.scalars(select(models.Evento).where(models.Evento.escola_id == user.escola_id).order_by(models.Evento.data))),
             comunicados=_comunicados_prof(db, user.escola_id),
@@ -449,7 +497,7 @@ def professor_preview(
         "professor.html",
         _ctx(
             request, user,
-            turmas=data.TURMAS,
+            turmas=_turmas_da_escola(db, user.escola_id),
             tarefas=_tarefas(db, user.escola_id),
             comunicados=_comunicados_prof(db, user.escola_id),
             preview=preview,
@@ -816,8 +864,10 @@ def familia_saude_medicacao(
 
 @app.get("/familia/assistente", response_class=HTMLResponse)
 def familia_assistente(request: Request, user=Depends(exigir("familia"))):
+    lang = i18n.resolve(request)
     return templates.TemplateResponse(
-        "assistente.html", _ctx(request, user, responsavel=_responsavel(user), saudacao=assistant.responder("")),
+        "assistente.html",
+        _ctx(request, user, responsavel=_responsavel(user), saudacao=assistant.responder("", lang=lang)),
     )
 
 
@@ -826,9 +876,9 @@ class Pergunta(BaseModel):
 
 
 @app.post("/api/assistente")
-def api_assistente(p: Pergunta, user=Depends(exigir("familia"))):
+def api_assistente(p: Pergunta, request: Request, user=Depends(exigir("familia"))):
     """Endpoint JSON consumido pelo chat. No MVP, chama a Claude API (tool use)."""
-    return JSONResponse(assistant.responder(p.mensagem))
+    return JSONResponse(assistant.responder(p.mensagem, lang=i18n.resolve(request)))
 
 
 @app.get("/familia/comunicado/{cid}", response_class=HTMLResponse)

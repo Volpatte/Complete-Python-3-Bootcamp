@@ -85,6 +85,15 @@ def _seed(db: Session) -> None:
         db.add(models.Evento(escola_id=escola.id, data=e["data"], titulo=e["titulo"], tipo=e["tipo"]))
 
     db.flush()  # garante familia.id e os ids dos comunicados
+
+    # --- Turmas (gerenciáveis: nome + professor responsável) ---
+    for tconf in data.TURMAS:
+        db.add(models.Turma(
+            escola_id=escola.id, nome=tconf["nome"], ativo=True,
+            professor_id=prof.id if tconf["professor"] == prof.nome else None,
+            professor_nome=tconf["professor"],
+        ))
+
     for a in data.AUTORIZACOES:
         db.add(models.Autorizacao(
             usuario_id=familia.id, titulo=a["titulo"], data_evento=a["data_evento"],

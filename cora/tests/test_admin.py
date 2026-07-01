@@ -125,3 +125,38 @@ def test_professor_nao_cria_aluno(professor):
     r = professor.post("/admin/aluno", data={"nome": "Hack", "turma": "5º Ano A"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].endswith("/professor")
     assert _aluno("Hack") is None
+
+
+# --------------------------------------------------------------------------- #
+# Turmas gerenciáveis
+# --------------------------------------------------------------------------- #
+def _turma(nome: str):
+    with SessionLocal() as db:
+        return db.scalar(select(models.Turma).where(models.Turma.nome == nome))
+
+
+def test_turmas_semeadas():
+    with SessionLocal() as db:
+        n = len(list(db.scalars(select(models.Turma))))
+    assert n >= 4  # as 4 turmas de data.TURMAS
+
+
+def test_criar_turma_com_professor(coord):
+    pid = _uid("prof@cora.app")
+    coord.post("/admin/turma", data={"nome": "4º Ano B", "professor_id": str(pid)})
+    tu = _turma("4º Ano B")
+    assert tu is not None and tu.professor_nome == "Prof. Marina" and tu.professor_id == pid
+
+
+def test_toggle_turma(coord):
+    coord.post("/admin/turma", data={"nome": "Turma Toggle"})
+    tu = _turma("Turma Toggle")
+    assert tu.ativo
+    coord.post(f"/admin/turma/{tu.id}/status")
+    assert not _turma("Turma Toggle").ativo
+
+
+def test_professor_nao_cria_turma(professor):
+    r = professor.post("/admin/turma", data={"nome": "Hack Turma"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
+    assert _turma("Hack Turma") is None
