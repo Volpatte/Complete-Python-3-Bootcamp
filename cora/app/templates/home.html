@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#12060f">
-  <title>Cora — cuidamos de quem protege o nosso futuro</title>
+  <title>Cora — {{ t("Cuidamos de quem protege o nosso futuro.") }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,9 +32,16 @@
     .brand{display:flex; align-items:center; gap:11px; font-weight:800; font-size:19px; letter-spacing:-.02em}
     .heart{width:34px; height:34px; border-radius:11px; background:var(--grad); display:grid; place-items:center;
       color:#fff; font-size:16px; box-shadow:0 6px 18px rgba(226,30,121,.35)}
+    .top .right{display:flex; align-items:center; gap:12px}
     .top .cta{padding:10px 20px; border-radius:999px; font-weight:700; font-size:14px;
       background:var(--ink); color:#fff; transition:.2s}
     .top .cta:hover{transform:translateY(-1px); box-shadow:0 10px 24px rgba(22,11,19,.22)}
+    /* language switcher */
+    .langsel{display:inline-flex; background:rgba(22,11,19,.05); border:1px solid var(--line);
+      border-radius:999px; padding:3px; gap:2px}
+    .langsel a{font-size:12.5px; font-weight:700; color:var(--muted); padding:5px 11px; border-radius:999px; transition:.15s}
+    .langsel a:hover{color:var(--ink)}
+    .langsel a.on{background:var(--ink); color:#fff}
 
     /* ---------- hero ---------- */
     .hero{padding:26px 0 16px}
@@ -72,9 +79,8 @@
     .grid{display:grid; gap:18px}
     .g4{grid-template-columns:repeat(4,1fr)}
     .g3{grid-template-columns:repeat(3,1fr)}
-    .g4b{grid-template-columns:repeat(4,1fr)}
     @media (max-width:900px){.g4,.g3{grid-template-columns:1fr 1fr}}
-    @media (max-width:560px){.g4,.g3,.g4b{grid-template-columns:1fr}}
+    @media (max-width:560px){.g4,.g3{grid-template-columns:1fr}}
 
     .feat{background:var(--soft); border:1px solid var(--line); border-radius:var(--radius); padding:26px 22px;
       transition:.2s}
@@ -124,7 +130,14 @@
   <header class="top">
     <div class="shell">
       <a href="/" class="brand"><span class="heart">♥</span> Cora</a>
-      <a href="/login" class="cta">Entrar</a>
+      <div class="right">
+        <nav class="langsel">
+          {% for code, label in langs.items() %}
+          <a href="/lang/{{ code }}" class="{{ 'on' if code == lang }}">{{ label }}</a>
+          {% endfor %}
+        </nav>
+        <a href="/login" class="cta">{{ t("Entrar") }}</a>
+      </div>
     </div>
   </header>
 
@@ -133,12 +146,11 @@
     <div class="shell">
       <div class="stage">
         <span class="glow"></span>
-        <h1>Cuidamos de quem <span class="accent">protege o nosso futuro</span>.</h1>
-        <p class="lede">Cora aproxima escola e família com o cuidado no centro. Inteligência que
-          resume o que importa, dados que viram decisão e a conversa fluindo por onde a família já está.</p>
+        <h1>{{ t("Cuidamos de quem") }} <span class="accent">{{ t("protege o nosso futuro") }}</span>.</h1>
+        <p class="lede">{{ t("Cora aproxima escola e família com o cuidado no centro. Inteligência que resume o que importa, dados que viram decisão e a conversa fluindo por onde a família já está.") }}</p>
         <div class="actions">
-          <a href="/login" class="btn primary">Entrar →</a>
-          <a href="#perfis" class="btn line">Ver demonstração</a>
+          <a href="/login" class="btn primary">{{ t("Entrar") }} →</a>
+          <a href="#perfis" class="btn line">{{ t("Ver demonstração") }}</a>
         </div>
       </div>
     </div>
@@ -147,30 +159,29 @@
   <!-- FEATURES -->
   <section class="block">
     <div class="shell">
-      <p class="kicker">A plataforma do cuidado</p>
-      <h2 class="htitle">Tudo o que aproxima, em um só lugar</h2>
-      <p class="hsub">Menos ruído, mais presença. O Cora cuida do que é operacional para a escola
-        estar por inteiro onde importa: perto das famílias.</p>
+      <p class="kicker">{{ t("A plataforma do cuidado") }}</p>
+      <h2 class="htitle">{{ t("Tudo o que aproxima, em um só lugar") }}</h2>
+      <p class="hsub">{{ t("Menos ruído, mais presença. O Cora cuida do que é operacional para a escola estar por inteiro onde importa: perto das famílias.") }}</p>
       <div class="grid g4">
         <div class="feat">
           <div class="ic">🧠</div>
-          <h3>Inteligência que cuida</h3>
-          <p>Resume comunicados, prioriza o urgente e sugere respostas. A família vê primeiro o que não pode esperar.</p>
+          <h3>{{ t("Inteligência que cuida") }}</h3>
+          <p>{{ t("Resume comunicados, prioriza o urgente e sugere respostas. A família vê primeiro o que não pode esperar.") }}</p>
         </div>
         <div class="feat">
           <div class="ic">📊</div>
-          <h3>Decisões com clareza</h3>
-          <p>Engajamento por turma e um radar das famílias que precisam de atenção — em tempo real.</p>
+          <h3>{{ t("Decisões com clareza") }}</h3>
+          <p>{{ t("Engajamento por turma e um radar das famílias que precisam de atenção — em tempo real.") }}</p>
         </div>
         <div class="feat">
           <div class="ic">💬</div>
-          <h3>Onde a família já está</h3>
-          <p>A comunicação chega também no WhatsApp, com entrega e leitura rastreáveis, sem app a mais para baixar.</p>
+          <h3>{{ t("Onde a família já está") }}</h3>
+          <p>{{ t("A comunicação chega também no WhatsApp, com entrega e leitura rastreáveis, sem app a mais para baixar.") }}</p>
         </div>
         <div class="feat">
           <div class="ic">🔌</div>
-          <h3>Conecta a escola inteira</h3>
-          <p>Integra os sistemas que a secretaria já usa — acadêmico, financeiro e pedagógico — sem retrabalho.</p>
+          <h3>{{ t("Conecta a escola inteira") }}</h3>
+          <p>{{ t("Integra os sistemas que a secretaria já usa — acadêmico, financeiro e pedagógico — sem retrabalho.") }}</p>
         </div>
       </div>
     </div>
@@ -179,30 +190,30 @@
   <!-- ROLES -->
   <section class="block roles" id="perfis">
     <div class="shell">
-      <p class="kicker">Experimente agora</p>
-      <h2 class="htitle">Escolha por onde entrar</h2>
-      <p class="hsub">Uma demonstração navegável, com dados de exemplo. Entre em qualquer perfil e sinta como o Cora funciona.</p>
+      <p class="kicker">{{ t("Experimente agora") }}</p>
+      <h2 class="htitle">{{ t("Escolha por onde entrar") }}</h2>
+      <p class="hsub">{{ t("Uma demonstração navegável, com dados de exemplo. Entre em qualquer perfil e sinta como o Cora funciona.") }}</p>
       <div class="grid g3">
         <a href="/login/demo/coordenacao" class="role">
           <div class="ico">🏫</div>
-          <h3>Coordenação / Direção</h3>
-          <p>Panorama de engajamento, sinais de risco e o pulso da escola — reunidos em um só lugar.</p>
-          <span class="go">Abrir painel →</span>
+          <h3>{{ t("Coordenação / Direção") }}</h3>
+          <p>{{ t("Panorama de engajamento, sinais de risco e o pulso da escola — reunidos em um só lugar.") }}</p>
+          <span class="go">{{ t("Abrir painel") }} →</span>
         </a>
         <a href="/login/demo/professor" class="role">
           <div class="ico">👩‍🏫</div>
-          <h3>Professor</h3>
-          <p>Escreva um comunicado e veja a inteligência resumir, priorizar e traduzir antes de enviar.</p>
-          <span class="go">Abrir painel →</span>
+          <h3>{{ t("Professor") }}</h3>
+          <p>{{ t("Escreva um comunicado e veja a inteligência resumir, priorizar e traduzir antes de enviar.") }}</p>
+          <span class="go">{{ t("Abrir painel") }} →</span>
         </a>
         <a href="/login/demo/familia" class="role">
           <div class="ico">👨‍👩‍👧</div>
-          <h3>Família</h3>
-          <p>O feed do que importa, agenda, tarefas e um assistente que responde 24h — sem perder nada.</p>
-          <span class="go">Abrir app →</span>
+          <h3>{{ t("Família") }}</h3>
+          <p>{{ t("O feed do que importa, agenda, tarefas e um assistente que responde 24h — sem perder nada.") }}</p>
+          <span class="go">{{ t("Abrir app") }} →</span>
         </a>
       </div>
-      <p class="demo-note">Prefere entrar manualmente? <a href="/login">Use a tela de login</a> — senha de demonstração <b>cora123</b>.</p>
+      <p class="demo-note">{{ t("Prefere entrar manualmente?") }} <a href="/login">{{ t("Use a tela de login") }}</a> — {{ t("senha de demonstração") }} <b>cora123</b>.</p>
     </div>
   </section>
 
@@ -211,20 +222,20 @@
     <div class="shell">
       <div class="kpis">
         <div class="kpi-row">
-          <div class="kpi"><div class="num">{{ escola.alunos }}</div><div class="lbl">alunos</div></div>
-          <div class="kpi"><div class="num">{{ escola.familias }}</div><div class="lbl">famílias</div></div>
-          <div class="kpi"><div class="num">{{ escola.professores }}</div><div class="lbl">professores</div></div>
-          <div class="kpi"><div class="num">{{ escola.cidade }}</div><div class="lbl">unidade</div></div>
+          <div class="kpi"><div class="num">{{ escola.alunos }}</div><div class="lbl">{{ t("alunos") }}</div></div>
+          <div class="kpi"><div class="num">{{ escola.familias }}</div><div class="lbl">{{ t("famílias") }}</div></div>
+          <div class="kpi"><div class="num">{{ escola.professores }}</div><div class="lbl">{{ t("professores") }}</div></div>
+          <div class="kpi"><div class="num">{{ escola.cidade }}</div><div class="lbl">{{ t("unidade") }}</div></div>
         </div>
       </div>
-      <p class="demo-badge">{{ escola.nome }} · ambiente de demonstração</p>
+      <p class="demo-badge">{{ escola.nome }} · {{ t("ambiente de demonstração") }}</p>
     </div>
   </section>
 
   <footer>
     <div class="shell">
       <a href="/" class="brand"><span class="heart">♥</span> Cora</a>
-      <p class="tag"><b>Cuidamos de quem protege o nosso futuro.</b> · perto de quem você ama 💜</p>
+      <p class="tag"><b>{{ t("Cuidamos de quem protege o nosso futuro.") }}</b> · {{ t("perto de quem você ama") }} 💜</p>
     </div>
   </footer>
 

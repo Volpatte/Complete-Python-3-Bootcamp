@@ -24,7 +24,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import ai, analytics, assistant, data, models, whatsapp
+from . import ai, analytics, assistant, data, i18n, models, whatsapp
 from .db import get_db
 from .seed import init_db
 from .security import autenticar
@@ -79,7 +79,11 @@ def exigir(*papeis: str):
 
 
 def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
-    base = {"request": request, "escola": data.ESCOLA, "ai": ai, "user": user}
+    lang = i18n.resolve(request)
+    base = {
+        "request": request, "escola": data.ESCOLA, "ai": ai, "user": user,
+        "lang": lang, "t": i18n.translator(lang), "langs": i18n.LANGS,
+    }
     base.update(extra)
     return base
 
@@ -94,9 +98,21 @@ def _responsavel(user: models.Usuario) -> dict:
 # --------------------------------------------------------------------------- #
 # Login / logout
 # --------------------------------------------------------------------------- #
+@app.get("/lang/{code}")
+def set_lang(code: str, request: Request):
+    """Troca o idioma da interface (pt/en/es) e volta para a página anterior."""
+    destino = request.headers.get("referer") or "/"
+    resp = RedirectResponse(destino, status_code=303)
+    resp.set_cookie(
+        i18n.COOKIE, i18n.normalize(code),
+        max_age=60 * 60 * 24 * 365, samesite="lax",
+    )
+    return resp
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request, erro: str = ""):
-    return templates.TemplateResponse("login.html", {"request": request, "erro": erro})
+    return templates.TemplateResponse("login.html", _ctx(request, erro=erro))
 
 
 @app.post("/login")

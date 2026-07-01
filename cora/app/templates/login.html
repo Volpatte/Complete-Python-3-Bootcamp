@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#12060f">
-  <title>Entrar · Cora</title>
+  <title>{{ t("Entrar") }} · Cora</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,6 +25,10 @@
     body::after{width:500px; height:500px; background:radial-gradient(circle,#7c3aed,transparent 62%); bottom:-200px; right:-120px}
     a{color:inherit; text-decoration:none}
     .wrap{position:relative; z-index:1; width:100%; max-width:410px}
+    .langsel{display:flex; justify-content:center; gap:2px; margin-bottom:16px}
+    .langsel a{font-size:12.5px; font-weight:700; color:rgba(255,255,255,.6); padding:5px 12px; border-radius:999px; transition:.15s}
+    .langsel a:hover{color:#fff}
+    .langsel a.on{background:rgba(255,255,255,.16); color:#fff}
     .brand{display:flex; align-items:center; gap:11px; justify-content:center; color:#fff; font-weight:800;
       font-size:22px; letter-spacing:-.02em; margin-bottom:20px}
     .heart{width:38px; height:38px; border-radius:12px; background:var(--grad); display:grid; place-items:center;
@@ -54,31 +58,36 @@
 </head>
 <body>
   <div class="wrap">
+    <nav class="langsel">
+      {% for code, label in langs.items() %}
+      <a href="/lang/{{ code }}" class="{{ 'on' if code == lang }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
     <div class="brand"><span class="heart">♥</span> Cora</div>
     <div class="card">
-      <h1>Bem-vindo de volta 💜</h1>
-      <p class="sub">Entre para acompanhar a escola de quem você ama.</p>
+      <h1>{{ t("Bem-vindo de volta") }} 💜</h1>
+      <p class="sub">{{ t("Entre para acompanhar a escola de quem você ama.") }}</p>
 
-      {% if erro %}<div class="erro">E-mail ou senha incorretos. Tente novamente.</div>{% endif %}
+      {% if erro %}<div class="erro">{{ t("E-mail ou senha incorretos. Tente novamente.") }}</div>{% endif %}
 
       <form action="/login" method="post">
-        <label>E-mail</label>
+        <label>{{ t("E-mail") }}</label>
         <input name="email" type="email" placeholder="voce@email.com" required>
-        <label>Senha</label>
+        <label>{{ t("Senha") }}</label>
         <input name="senha" type="password" placeholder="••••••••" required>
-        <button class="cta">Entrar</button>
+        <button class="cta">{{ t("Entrar") }}</button>
       </form>
 
       <div class="demo">
-        <p>Acesso rápido para demonstração (senha: <b>cora123</b>)</p>
+        <p>{{ t("Acesso rápido para demonstração (senha:") }} <b>cora123</b>)</p>
         <div class="row">
-          <a href="/login/demo/familia">👨‍👩‍👧 Família</a>
-          <a href="/login/demo/professor">👩‍🏫 Professor</a>
-          <a href="/login/demo/coordenacao">🏫 Coordenação</a>
+          <a href="/login/demo/familia">👨‍👩‍👧 {{ t("Família") }}</a>
+          <a href="/login/demo/professor">👩‍🏫 {{ t("Professor") }}</a>
+          <a href="/login/demo/coordenacao">🏫 {{ t("Coordenação") }}</a>
         </div>
       </div>
     </div>
-    <a href="/" class="back">← Voltar ao início</a>
+    <a href="/" class="back">← {{ t("Voltar ao início") }}</a>
   </div>
 </body>
 </html>
