@@ -298,7 +298,13 @@
     "Professor responsável": "Assigned teacher",
     "Sem professor": "No teacher",
     "Criar turma": "Create class",
-    "Turmas atualizadas.": "Classes updated."
+    "Turmas atualizadas.": "Classes updated.",
+    "Importar por planilha (CSV)": "Import from spreadsheet (CSV)",
+    "Envie um CSV para cadastrar vários alunos de uma vez (e criar as famílias responsáveis).": "Upload a CSV to register many students at once (and create the guardian families).",
+    "Colunas": "Columns",
+    "Importar": "Import",
+    "Importação concluída:": "Import complete:",
+    "com erro": "with errors"
   },
   "es": {
     "Oi,": "Hola,",
@@ -599,6 +605,12 @@
     "Professor responsável": "Profesor responsable",
     "Sem professor": "Sin profesor",
     "Criar turma": "Crear grupo",
-    "Turmas atualizadas.": "Grupos actualizados."
+    "Turmas atualizadas.": "Grupos actualizados.",
+    "Importar por planilha (CSV)": "Importar desde planilla (CSV)",
+    "Envie um CSV para cadastrar vários alunos de uma vez (e criar as famílias responsáveis).": "Sube un CSV para registrar varios alumnos a la vez (y crear las familias responsables).",
+    "Colunas": "Columnas",
+    "Importar": "Importar",
+    "Importação concluída:": "Importación completa:",
+    "com erro": "con error"
   }
 }

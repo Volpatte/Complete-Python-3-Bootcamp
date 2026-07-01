@@ -16,7 +16,7 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -178,6 +178,7 @@ def _usuarios_da_escola(db: Session, escola_id: int):
 @app.get("/admin", response_class=HTMLResponse)
 def admin_home(
     request: Request, nova_senha: str = "", nome_reset: str = "", msg: str = "", erro: str = "",
+    imp_alunos: int = 0, imp_familias: int = 0, imp_erros: int = 0,
     db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
 ):
     usuarios = _usuarios_da_escola(db, user.escola_id)
@@ -206,6 +207,7 @@ def admin_home(
             professores=[u for u in usuarios if u.papel == models.PROFESSOR],
             alunos_por_turma=alunos_por_turma,
             nova_senha=nova_senha, nome_reset=nome_reset, msg=msg, erro=erro,
+            imp_alunos=imp_alunos, imp_familias=imp_familias, imp_erros=imp_erros,
         ),
     )
 
@@ -367,6 +369,77 @@ def admin_toggle_turma(
         turma.ativo = not turma.ativo
         db.commit()
     return RedirectResponse("/admin?msg=turma", status_code=303)
+
+
+def _campo_csv(row: dict, *nomes: str) -> str:
+    """Lê um campo do CSV aceitando variações de nome de coluna."""
+    for k, v in row.items():
+        if k and k.strip().lower() in nomes:
+            return (v or "").strip()
+    return ""
+
+
+@app.post("/admin/importar")
+async def admin_importar(
+    request: Request, arquivo: UploadFile = File(...),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_ADMIN)),
+):
+    """Importa alunos (e cria as famílias responsáveis) a partir de um CSV.
+
+    Colunas aceitas (flexível): aluno/nome, turma, matrícula (opcional),
+    responsável, email. O separador (',' ou ';') é detectado automaticamente.
+    """
+    import csv
+    import io
+
+    texto = (await arquivo.read()).decode("utf-8-sig", errors="replace")
+    amostra = texto[:2000]
+    delim = ";" if amostra.count(";") > amostra.count(",") else ","
+    reader = csv.DictReader(io.StringIO(texto), delimiter=delim)
+
+    n_alunos = n_familias = n_erros = 0
+    cache_fam: dict[str, models.Usuario] = {}
+    for row in reader:
+        if not row:
+            continue
+        aluno_nome = _campo_csv(row, "aluno", "aluno_nome", "nome_aluno", "nome", "estudante", "student", "alumno")
+        if not aluno_nome:
+            continue
+        turma = _campo_csv(row, "turma", "class", "grupo", "serie", "série")
+        matricula = _campo_csv(row, "matricula", "matrícula", "enrollment", "ra")
+        email = _campo_csv(row, "email", "e-mail", "responsavel_email", "email_responsavel").lower()
+        resp_nome = _campo_csv(row, "responsavel", "responsável", "responsavel_nome", "nome_responsavel", "guardian", "familia", "família")
+
+        resp = None
+        if email:
+            resp = cache_fam.get(email) or db.scalar(select(models.Usuario).where(models.Usuario.email == email))
+            if resp is None:
+                resp = models.Usuario(
+                    nome=resp_nome or ("Família " + aluno_nome.split(" ")[-1]),
+                    email=email, senha_hash=hash_senha(senha_temporaria()),
+                    papel=models.FAMILIA, escola_id=user.escola_id, ativo=True,
+                    filho_nome=aluno_nome, turma=turma,
+                )
+                db.add(resp)
+                db.flush()
+                n_familias += 1
+            cache_fam[email] = resp
+            if resp.escola_id != user.escola_id or resp.papel != models.FAMILIA:
+                resp, _ = None, (n_erros := n_erros + 1)
+
+        db.add(models.Aluno(
+            escola_id=user.escola_id, nome=aluno_nome, turma=turma,
+            matricula=matricula or _gerar_matricula(db, user.escola_id),
+            responsavel_id=resp.id if resp else None, ativo=True,
+        ))
+        db.flush()
+        n_alunos += 1
+
+    db.commit()
+    return RedirectResponse(
+        f"/admin?msg=import&imp_alunos={n_alunos}&imp_familias={n_familias}&imp_erros={n_erros}",
+        status_code=303,
+    )
 
 
 # --------------------------------------------------------------------------- #

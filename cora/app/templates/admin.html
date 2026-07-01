@@ -27,6 +27,9 @@
 <div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Lista de alunos atualizada.") }}</div></div>
 {% elif msg == 'turma' %}
 <div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Turmas atualizadas.") }}</div></div>
+{% elif msg == 'import' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Importação concluída:") }}
+  {{ imp_alunos }} {{ t("alunos") }}, {{ imp_familias }} {{ t("famílias") }}{% if imp_erros %} · {{ imp_erros }} {{ t("com erro") }}{% endif %}.</div></div>
 {% endif %}
 {% if erro %}
 <div class="ai-box" style="border-color:#fecaca;background:#fef2f2"><div class="head" style="color:#dc2626">⚠️
@@ -256,6 +259,20 @@
     {% endfor %}
     </tbody>
   </table>
+</div>
+
+{# ---- importar por CSV ---- #}
+<p class="section-title">{{ t("Importar por planilha (CSV)") }}</p>
+<div class="card">
+  <p style="margin:0 0 14px;color:var(--muted);font-size:14px">
+    {{ t("Envie um CSV para cadastrar vários alunos de uma vez (e criar as famílias responsáveis).") }}<br>
+    <span class="muted small">{{ t("Colunas") }}: <code>aluno, turma, matricula, responsavel, email</code></span>
+  </p>
+  <form action="/admin/importar" method="post" enctype="multipart/form-data">
+    <input type="file" name="arquivo" accept=".csv,text/csv" required
+           style="padding:10px;background:var(--soft)">
+    <button class="btn" style="margin-top:14px">📥 {{ t("Importar") }}</button>
+  </form>
 </div>
 
 <script>

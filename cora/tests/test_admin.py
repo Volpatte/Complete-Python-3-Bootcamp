@@ -160,3 +160,33 @@ def test_professor_nao_cria_turma(professor):
     r = professor.post("/admin/turma", data={"nome": "Hack Turma"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].endswith("/professor")
     assert _turma("Hack Turma") is None
+
+
+# --------------------------------------------------------------------------- #
+# Importação por CSV
+# --------------------------------------------------------------------------- #
+def test_importar_csv(coord):
+    csv = (
+        "aluno,turma,email,responsavel\n"
+        "Bruno Alves,3º Ano A,alves@x.com,Família Alves\n"
+        "Sofia Alves,3º Ano A,alves@x.com,Família Alves\n"  # mesmo responsável → 2º filho
+        "Rex Solo,5º Ano B,,\n"                              # sem responsável
+    )
+    r = coord.post("/admin/importar", files={"arquivo": ("alunos.csv", csv.encode(), "text/csv")},
+                   follow_redirects=False)
+    assert r.status_code == 303
+    loc = r.headers["location"]
+    assert "imp_alunos=3" in loc and "imp_familias=1" in loc
+    with SessionLocal() as db:
+        fam = db.scalar(select(models.Usuario).where(models.Usuario.email == "alves@x.com"))
+        assert fam is not None and fam.papel == "familia"
+        bruno = db.scalar(select(models.Aluno).where(models.Aluno.nome == "Bruno Alves"))
+        assert bruno.responsavel_id == fam.id and bruno.matricula.startswith("2026")
+        solo = db.scalar(select(models.Aluno).where(models.Aluno.nome == "Rex Solo"))
+        assert solo.responsavel_id is None
+
+
+def test_professor_nao_importa(professor):
+    r = professor.post("/admin/importar", files={"arquivo": ("x.csv", b"aluno\nX\n", "text/csv")},
+                       follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/professor")
