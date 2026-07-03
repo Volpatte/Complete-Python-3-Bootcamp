@@ -6,7 +6,7 @@
 <header class="app-head">
   <div class="row">
     <div class="avatar">JP</div>
-    <button class="icon-btn">🔔<span class="dot"></span></button>
+    <a href="/familia/notificacoes" class="icon-btn" style="text-decoration:none;position:relative">🔔{% if notif_count %}<span style="position:absolute;top:-3px;right:-3px;background:#fff;color:#ff3d71;border-radius:999px;min-width:17px;height:17px;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 3px">{{ notif_count }}</span>{% endif %}</a>
   </div>
   <h1>{{ t("Oi,") }} {{ responsavel.nome.split(' ')[0] }} 👋</h1>
   <p class="sub">{{ responsavel.filho }} · {{ responsavel.turma }}</p>

@@ -12,7 +12,7 @@ Usuários demo (senha: cora123): coord@cora.app · prof@cora.app · familia@cora
 from __future__ import annotations
 
 import os
-from datetime import date, datetime
+from datetime import date, datetime, time
 from pathlib import Path
 from urllib.parse import quote
 
@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import ai, analytics, assistant, data, i18n, models, whatsapp
-from .db import get_db
+from .db import SessionLocal, get_db
 from .seed import init_db
 from .security import autenticar, hash_senha, senha_temporaria
 
@@ -114,6 +114,49 @@ def exigir(*papeis: str):
     return dep
 
 
+def _notificacoes(db: Session, user: models.Usuario) -> list[dict]:
+    """Agrega os itens que pedem atenção do usuário (ao vivo, sem estado próprio)."""
+    itens: list[dict] = []
+    if user.papel == models.FAMILIA:
+        coms = list(db.scalars(select(models.Comunicado).where(
+            models.Comunicado.escola_id == user.escola_id,
+            or_(models.Comunicado.turma == "Toda a escola", models.Comunicado.turma == user.turma),
+        )))
+        lidos = set(db.scalars(select(models.Leitura.comunicado_id).where(
+            models.Leitura.usuario_id == user.id, models.Leitura.lido.is_(True))))
+        for c in coms:
+            if c.id not in lidos:
+                itens.append({"emoji": "📢", "titulo": c.titulo, "acao": "Comunicado não lido",
+                              "extra": "", "link": f"/familia/comunicado/{c.id}", "quando": c.enviado_em})
+        for cob in db.scalars(select(models.Cobranca).where(
+                models.Cobranca.usuario_id == user.id, models.Cobranca.status != "pago")):
+            itens.append({"emoji": "💳", "titulo": cob.descricao, "acao": "Fatura em aberto",
+                          "extra": _reais(cob.valor_centavos), "link": "/familia/financeiro",
+                          "quando": datetime.combine(cob.vencimento, time.min)})
+        for a in db.scalars(select(models.Autorizacao).where(
+                models.Autorizacao.usuario_id == user.id, models.Autorizacao.status == "pendente")):
+            itens.append({"emoji": "✅", "titulo": a.titulo, "acao": "Autorização pendente",
+                          "extra": "", "link": "/familia#autorizacoes",
+                          "quando": datetime.combine(a.data_evento, time.min)})
+    elif user.papel in models.PAPEIS_STAFF:
+        por_rem: dict[int, dict] = {}
+        for m in db.scalars(select(models.MensagemStaff).where(
+                models.MensagemStaff.para_id == user.id, models.MensagemStaff.lido.is_(False),
+        ).order_by(models.MensagemStaff.enviado_em.desc())):
+            por_rem.setdefault(m.de_id, {"emoji": "💬", "titulo": m.de_nome, "acao": "Nova mensagem",
+                                         "extra": "", "link": f"/equipe/{m.de_id}", "quando": m.enviado_em})
+        itens.extend(por_rem.values())
+    itens.sort(key=lambda x: x["quando"] or datetime.min, reverse=True)
+    return itens
+
+
+def _notif_count(user: models.Usuario | None) -> int:
+    if not user:
+        return 0
+    with SessionLocal() as db:
+        return len(_notificacoes(db, user))
+
+
 def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
     lang = i18n.resolve(request)
     base = {
@@ -122,6 +165,7 @@ def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
         "is_admin": bool(user and user.papel in models.PAPEIS_ADMIN),
         "pode_financeiro": bool(user and user.papel in PAPEIS_FINANCEIRO),
         "is_staff": bool(user and user.papel in models.PAPEIS_STAFF),
+        "notif_count": _notif_count(user),
     }
     base.update(extra)
     return base
@@ -750,6 +794,24 @@ def equipe_enviar(
         ))
         db.commit()
     return RedirectResponse(f"/equipe/{cid}", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Central de notificações (agregada por usuário)
+# --------------------------------------------------------------------------- #
+@app.get("/notificacoes", response_class=HTMLResponse)
+def notificacoes_staff(request: Request, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    return templates.TemplateResponse(
+        "notificacoes.html", _ctx(request, user, active="notif", itens=_notificacoes(db, user)),
+    )
+
+
+@app.get("/familia/notificacoes", response_class=HTMLResponse)
+def notificacoes_familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
+    return templates.TemplateResponse(
+        "notificacoes_familia.html",
+        _ctx(request, user, responsavel=_responsavel(user), itens=_notificacoes(db, user)),
+    )
 
 
 # --------------------------------------------------------------------------- #

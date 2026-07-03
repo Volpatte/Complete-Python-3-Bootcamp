@@ -352,7 +352,16 @@
     "Iniciar conversa": "Start a conversation",
     "Você:": "You:",
     "Nenhum colega ainda.": "No colleagues yet.",
-    "Escreva uma mensagem…": "Write a message…"
+    "Escreva uma mensagem…": "Write a message…",
+    "Notificações": "Notifications",
+    "Tudo o que precisa da sua atenção, em um só lugar.": "Everything that needs your attention, in one place.",
+    "O que precisa da sua atenção": "What needs your attention",
+    "Tudo em dia! Nenhuma notificação.": "All caught up! No notifications.",
+    "Tudo em dia!": "All caught up!",
+    "Comunicado não lido": "Unread announcement",
+    "Fatura em aberto": "Open invoice",
+    "Autorização pendente": "Pending permission",
+    "Nova mensagem": "New message"
   },
   "es": {
     "Oi,": "Hola,",
@@ -707,6 +716,15 @@
     "Iniciar conversa": "Iniciar conversación",
     "Você:": "Tú:",
     "Nenhum colega ainda.": "Aún no hay colegas.",
-    "Escreva uma mensagem…": "Escribe un mensaje…"
+    "Escreva uma mensagem…": "Escribe un mensaje…",
+    "Notificações": "Notificaciones",
+    "Tudo o que precisa da sua atenção, em um só lugar.": "Todo lo que necesita tu atención, en un solo lugar.",
+    "O que precisa da sua atenção": "Lo que necesita tu atención",
+    "Tudo em dia! Nenhuma notificação.": "¡Todo al día! Sin notificaciones.",
+    "Tudo em dia!": "¡Todo al día!",
+    "Comunicado não lido": "Comunicado no leído",
+    "Fatura em aberto": "Factura pendiente",
+    "Autorização pendente": "Autorización pendiente",
+    "Nova mensagem": "Nuevo mensaje"
   }
 }
