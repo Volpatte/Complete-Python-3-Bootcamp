@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Cora · {{ t("Autorizações") }}{% endblock %}
+{% block content %}
+
+<div class="hero" style="text-align:left;padding:24px 0 6px">
+  <h1 style="font-size:30px;margin:0 0 6px">{{ t("Autorizações da escola") }}</h1>
+  <p style="color:var(--muted);margin:0;font-size:16px">{{ t("Solicite autorizações e acompanhe as respostas das famílias.") }}</p>
+</div>
+
+{% if msg == 'solicitado' %}
+<div class="ai-box" style="border-color:#bbf7d0;background:#f0fdf4"><div class="head" style="color:#059669">✅ {{ t("Autorização solicitada.") }}</div></div>
+{% elif msg == 'erro' %}
+<div class="ai-box" style="border-color:#fecaca;background:#fef2f2"><div class="head" style="color:#dc2626">⚠️ {{ t("Preencha o título e o destino.") }}</div></div>
+{% endif %}
+
+{# ---- solicitar autorização ---- #}
+<p class="section-title">{{ t("Solicitar autorização") }}</p>
+<div class="card">
+  <form action="/autorizacoes" method="post">
+    <div class="grid cols-2">
+      <div>
+        <label>{{ t("Título") }}</label>
+        <input name="titulo" required placeholder="Ex.: Passeio ao museu">
+      </div>
+      <div>
+        <label>{{ t("Data do evento") }}</label>
+        <input name="data_evento" type="date">
+      </div>
+    </div>
+    <label>{{ t("Descrição") }}</label>
+    <textarea name="descricao" rows="2" placeholder="{{ t('Detalhes: horário, local, custo…') }}"></textarea>
+    <div style="margin-top:12px">
+      <label>{{ t("Destino") }}</label>
+      <select name="alvo">
+        <option value="escola">{{ t("Toda a escola") }}</option>
+        {% for tu in turmas %}<option value="turma:{{ tu.nome }}">{{ t("Turma") }}: {{ tu.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn" style="margin-top:16px">{{ t("Solicitar") }}</button>
+  </form>
+</div>
+
+{# ---- respostas por evento ---- #}
+<p class="section-title">{{ t("Solicitações") }} · {{ grupos|length }}</p>
+<div class="grid cols-2">
+  {% for g in grupos %}
+  <div class="card">
+    <div style="font-weight:700;font-size:16px">{{ t(g.titulo) }}</div>
+    <div class="muted small" style="margin-bottom:12px">{{ g.data_evento|dia }}</div>
+    {% set pct = (g.autorizado * 100 // g.total) if g.total else 0 %}
+    <div class="bar"><span style="width:{{ pct }}%"></span></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <span class="pill green">✅ {{ g.autorizado }} {{ t("Autorizado(s)") }}</span>
+      <span class="pill red">✕ {{ g.recusado }} {{ t("Recusado(s)") }}</span>
+      <span class="pill gray">⏳ {{ g.pendente }} {{ t("Pendente(s)") }}</span>
+    </div>
+  </div>
+  {% else %}
+  <div class="card"><p class="muted" style="margin:0">{{ t("Nenhuma autorização ainda.") }}</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

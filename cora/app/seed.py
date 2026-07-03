@@ -96,8 +96,8 @@ def _seed(db: Session) -> None:
 
     for a in data.AUTORIZACOES:
         db.add(models.Autorizacao(
-            usuario_id=familia.id, titulo=a["titulo"], data_evento=a["data_evento"],
-            descricao=a["descricao"], status=a["status"],
+            escola_id=escola.id, usuario_id=familia.id, titulo=a["titulo"],
+            data_evento=a["data_evento"], descricao=a["descricao"], status=a["status"],
         ))
 
     # --- Famílias extras + leituras (alimentam os analytics reais) ---
@@ -156,6 +156,16 @@ def _seed(db: Session) -> None:
             metodo="Pix" if status == "pago" else "",
             pago_em=datetime.combine(venc - timedelta(days=2), time(10, 0)) if status == "pago" else None,
         ))
+
+    # Broadcast do "Passeio ao Jardim Botânico" para as famílias do 5º Ano A
+    # (dá dados de resposta ao painel de autorizações da escola).
+    passeio = data.AUTORIZACOES[0]
+    for u, _perfil in extras:
+        if u.turma == "5º Ano A":
+            db.add(models.Autorizacao(
+                escola_id=escola.id, usuario_id=u.id, titulo=passeio["titulo"],
+                data_evento=passeio["data_evento"], descricao=passeio["descricao"], status="pendente",
+            ))
 
     leram = {c.id: 0 for c in coms_objs}
     total = {c.id: 0 for c in coms_objs}

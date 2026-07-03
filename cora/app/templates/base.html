@@ -16,6 +16,7 @@
       {% if is_admin %}<a href="/admin" class="{{ 'active' if active=='admin' }}">{{ t("Gestão") }}</a>{% endif %}
       {% if pode_financeiro %}<a href="/financeiro" class="{{ 'active' if active=='financeiro' }}">{{ t("Financeiro") }}</a>{% endif %}
       {% if user and user.papel in ('professor', 'coordenacao') %}<a href="/mensagens" class="{{ 'active' if active=='msg' }}">{{ t("Mensagens") }}</a>{% endif %}
+      {% if user and user.papel in ('professor', 'coordenacao') %}<a href="/autorizacoes" class="{{ 'active' if active=='autorizacoes' }}">{{ t("Autorizações") }}</a>{% endif %}
       {% if user and user.papel == 'coordenacao' %}<a href="/whatsapp" class="{{ 'active' if active=='wa' }}">WhatsApp</a>{% endif %}
       {% if user and user.papel == 'coordenacao' %}<a href="/saude" class="{{ 'active' if active=='saude' }}">{{ t("Saúde") }}</a>{% endif %}
       <span class="langsel">

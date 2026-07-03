@@ -584,6 +584,91 @@ def familia_pagar(
 
 
 # --------------------------------------------------------------------------- #
+# Autorizações — resposta da família + painel de solicitações do staff
+# --------------------------------------------------------------------------- #
+@app.post("/familia/autorizacao/{aid}/responder")
+def familia_autorizar(
+    request: Request, aid: int, resposta: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    a = db.get(models.Autorizacao, aid)
+    if a and a.usuario_id == user.id and resposta in ("autorizado", "recusado"):
+        a.status = resposta
+        a.respondido_em = datetime.utcnow()
+        db.commit()
+    return RedirectResponse("/familia#autorizacoes", status_code=303)
+
+
+@app.get("/autorizacoes", response_class=HTMLResponse)
+def autorizacoes_central(
+    request: Request, msg: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao")),
+):
+    todas = list(
+        db.scalars(
+            select(models.Autorizacao)
+            .where(models.Autorizacao.escola_id == user.escola_id)
+            .order_by(models.Autorizacao.data_evento)
+        )
+    )
+    grupos: dict[tuple, dict] = {}
+    for a in todas:
+        g = grupos.setdefault((a.titulo, a.data_evento), {
+            "titulo": a.titulo, "data_evento": a.data_evento, "descricao": a.descricao,
+            "total": 0, "autorizado": 0, "recusado": 0, "pendente": 0,
+        })
+        g["total"] += 1
+        g[a.status] = g.get(a.status, 0) + 1
+    return templates.TemplateResponse(
+        "autorizacoes.html",
+        _ctx(
+            request, user, active="autorizacoes",
+            grupos=sorted(grupos.values(), key=lambda g: g["data_evento"]),
+            turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True), msg=msg,
+        ),
+    )
+
+
+@app.post("/autorizacoes")
+def autorizacoes_criar(
+    request: Request,
+    titulo: str = Form(...), data_evento: str = Form(""), descricao: str = Form(""), alvo: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao")),
+):
+    titulo = titulo.strip()
+    if not titulo or not alvo:
+        return RedirectResponse("/autorizacoes?msg=erro", status_code=303)
+    try:
+        quando = date.fromisoformat(data_evento) if data_evento else data.HOJE
+    except ValueError:
+        quando = data.HOJE
+
+    def _add(uid: int):
+        db.add(models.Autorizacao(
+            escola_id=user.escola_id, usuario_id=uid, titulo=titulo,
+            data_evento=quando, descricao=descricao.strip(), status="pendente",
+        ))
+
+    if alvo == "escola":
+        for u in _usuarios_da_escola(db, user.escola_id):
+            if u.papel == models.FAMILIA:
+                _add(u.id)
+    elif alvo.startswith("turma:"):
+        tnome = alvo[len("turma:"):]
+        alunos = db.scalars(select(models.Aluno).where(
+            models.Aluno.escola_id == user.escola_id, models.Aluno.turma == tnome,
+            models.Aluno.ativo.is_(True), models.Aluno.responsavel_id.is_not(None),
+        ))
+        vistos: set[int] = set()
+        for al in alunos:
+            if al.responsavel_id not in vistos:
+                vistos.add(al.responsavel_id)
+                _add(al.responsavel_id)
+    db.commit()
+    return RedirectResponse("/autorizacoes?msg=solicitado", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
 # Coordenação
 # --------------------------------------------------------------------------- #
 @app.get("/coordenacao", response_class=HTMLResponse)

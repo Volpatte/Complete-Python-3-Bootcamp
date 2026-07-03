@@ -141,13 +141,20 @@ class Evento(Base):
 
 
 class Autorizacao(Base):
+    """Pedido de autorização (passeio, uso de imagem…). Uma linha por família.
+
+    status: pendente | autorizado | recusado.
+    """
+
     __tablename__ = "autorizacoes"
     id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True, default=0)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
     titulo: Mapped[str] = mapped_column(String(200))
     data_evento: Mapped[date] = mapped_column(Date)
     descricao: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="pendente")
+    respondido_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Conversa(Base):
