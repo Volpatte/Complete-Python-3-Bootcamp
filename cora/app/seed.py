@@ -167,6 +167,22 @@ def _seed(db: Session) -> None:
                 data_evento=passeio["data_evento"], descricao=passeio["descricao"], status="pendente",
             ))
 
+    # Mensagens internas de exemplo (coordenação ↔ professora)
+    db.add_all([
+        models.MensagemStaff(
+            escola_id=escola.id, de_id=coord.id, de_nome=coord.nome,
+            para_id=prof.id, para_nome=prof.nome, lido=True,
+            corpo="Marina, consegue me enviar o relatório da turma 5º Ano A até sexta?",
+            enviado_em=datetime(2026, 6, 16, 10, 0),
+        ),
+        models.MensagemStaff(
+            escola_id=escola.id, de_id=prof.id, de_nome=prof.nome,
+            para_id=coord.id, para_nome=coord.nome, lido=False,
+            corpo="Claro! Termino hoje e já te mando. 👍",
+            enviado_em=datetime(2026, 6, 16, 10, 12),
+        ),
+    ])
+
     leram = {c.id: 0 for c in coms_objs}
     total = {c.id: 0 for c in coms_objs}
     for u, perfil in extras:

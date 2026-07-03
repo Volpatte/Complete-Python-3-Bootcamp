@@ -263,7 +263,7 @@
     "Senha (deixe em branco para gerar)": "Password (leave blank to auto-generate)",
     "Aluno (filho)": "Student (child)",
     "Criar usuário": "Create user",
-    "Equipe": "Staff",
+    "Equipe": "Team",
     "Famílias": "Families",
     "Redefinir senha": "Reset password",
     "Desativar": "Deactivate",
@@ -346,7 +346,13 @@
     "Autorizado(s)": "authorized",
     "Recusado(s)": "declined",
     "Pendente(s)": "pending",
-    "Nenhuma autorização ainda.": "No permissions yet."
+    "Nenhuma autorização ainda.": "No permissions yet.",
+    "Mensagens da equipe": "Team messages",
+    "Converse com os colegas da escola.": "Chat with your school colleagues.",
+    "Iniciar conversa": "Start a conversation",
+    "Você:": "You:",
+    "Nenhum colega ainda.": "No colleagues yet.",
+    "Escreva uma mensagem…": "Write a message…"
   },
   "es": {
     "Oi,": "Hola,",
@@ -499,7 +505,7 @@
     "Nenhuma conversa.": "Ninguna conversación.",
     "voltar às mensagens": "volver a los mensajes",
     "Conversa com a família": "Conversación con la familia",
-    "Nenhuma mensagem ainda.": "Ningún mensaje aún.",
+    "Nenhuma mensagem ainda.": "Aún no hay mensajes.",
     "Escreva uma resposta…": "Escribe una respuesta…",
     "Enviar": "Enviar",
     "Saúde — Enfermaria": "Salud — Enfermería",
@@ -612,7 +618,7 @@
     "Senha (deixe em branco para gerar)": "Contraseña (deja en blanco para generar)",
     "Aluno (filho)": "Alumno (hijo)",
     "Criar usuário": "Crear usuario",
-    "Equipe": "Personal",
+    "Equipe": "Equipo",
     "Famílias": "Familias",
     "Redefinir senha": "Restablecer contraseña",
     "Desativar": "Desactivar",
@@ -695,6 +701,12 @@
     "Autorizado(s)": "autorizado(s)",
     "Recusado(s)": "rechazado(s)",
     "Pendente(s)": "pendiente(s)",
-    "Nenhuma autorização ainda.": "Aún no hay autorizaciones."
+    "Nenhuma autorização ainda.": "Aún no hay autorizaciones.",
+    "Mensagens da equipe": "Mensajes del equipo",
+    "Converse com os colegas da escola.": "Conversa con los colegas de la escuela.",
+    "Iniciar conversa": "Iniciar conversación",
+    "Você:": "Tú:",
+    "Nenhum colega ainda.": "Aún no hay colegas.",
+    "Escreva uma mensagem…": "Escribe un mensaje…"
   }
 }

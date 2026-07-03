@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -121,6 +121,7 @@ def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
         "lang": lang, "t": i18n.translator(lang), "langs": i18n.LANGS,
         "is_admin": bool(user and user.papel in models.PAPEIS_ADMIN),
         "pode_financeiro": bool(user and user.papel in PAPEIS_FINANCEIRO),
+        "is_staff": bool(user and user.papel in models.PAPEIS_STAFF),
     }
     base.update(extra)
     return base
@@ -666,6 +667,89 @@ def autorizacoes_criar(
                 _add(al.responsavel_id)
     db.commit()
     return RedirectResponse("/autorizacoes?msg=solicitado", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Mensagens internas da equipe (staff ↔ staff)
+# --------------------------------------------------------------------------- #
+def _colegas(db: Session, escola_id: int, exceto_id: int):
+    return list(db.scalars(select(models.Usuario).where(
+        models.Usuario.escola_id == escola_id,
+        models.Usuario.papel.in_(models.PAPEIS_STAFF),
+        models.Usuario.id != exceto_id,
+        models.Usuario.ativo.is_(True),
+    ).order_by(models.Usuario.nome)))
+
+
+def _entre(user_id: int, colega_id: int):
+    """Filtro: mensagens trocadas entre dois usuários (nos dois sentidos)."""
+    return or_(
+        and_(models.MensagemStaff.de_id == user_id, models.MensagemStaff.para_id == colega_id),
+        and_(models.MensagemStaff.de_id == colega_id, models.MensagemStaff.para_id == user_id),
+    )
+
+
+@app.get("/equipe", response_class=HTMLResponse)
+def equipe_inbox(request: Request, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    itens = []
+    for c in _colegas(db, user.escola_id, user.id):
+        ultima = db.scalar(
+            select(models.MensagemStaff)
+            .where(models.MensagemStaff.escola_id == user.escola_id, _entre(user.id, c.id))
+            .order_by(models.MensagemStaff.enviado_em.desc())
+        )
+        nao_lidas = db.scalar(
+            select(func.count()).select_from(models.MensagemStaff).where(
+                models.MensagemStaff.para_id == user.id, models.MensagemStaff.de_id == c.id,
+                models.MensagemStaff.lido.is_(False),
+            )
+        ) or 0
+        itens.append({"colega": c, "ultima": ultima, "nao_lidas": nao_lidas})
+    itens.sort(key=lambda x: (x["ultima"].enviado_em if x["ultima"] else datetime.min), reverse=True)
+    return templates.TemplateResponse("equipe.html", _ctx(request, user, active="equipe", itens=itens))
+
+
+def _colega_valido(db: Session, cid: int, user) -> models.Usuario | None:
+    c = db.get(models.Usuario, cid)
+    if c and c.escola_id == user.escola_id and c.papel in models.PAPEIS_STAFF and c.id != user.id:
+        return c
+    return None
+
+
+@app.get("/equipe/{cid}", response_class=HTMLResponse)
+def equipe_conversa(request: Request, cid: int, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    colega = _colega_valido(db, cid, user)
+    if colega is None:
+        return RedirectResponse("/equipe", status_code=303)
+    mensagens = list(
+        db.scalars(
+            select(models.MensagemStaff)
+            .where(models.MensagemStaff.escola_id == user.escola_id, _entre(user.id, colega.id))
+            .order_by(models.MensagemStaff.enviado_em)
+        )
+    )
+    for m in mensagens:  # marca como lidas as recebidas
+        if m.para_id == user.id and not m.lido:
+            m.lido = True
+    db.commit()
+    return templates.TemplateResponse(
+        "equipe_conversa.html", _ctx(request, user, active="equipe", colega=colega, mensagens=mensagens),
+    )
+
+
+@app.post("/equipe/{cid}/enviar")
+def equipe_enviar(
+    request: Request, cid: int, corpo: str = Form(...),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF)),
+):
+    colega = _colega_valido(db, cid, user)
+    if colega is not None and corpo.strip():
+        db.add(models.MensagemStaff(
+            escola_id=user.escola_id, de_id=user.id, de_nome=user.nome,
+            para_id=colega.id, para_nome=colega.nome, corpo=corpo.strip(), lido=False,
+        ))
+        db.commit()
+    return RedirectResponse(f"/equipe/{cid}", status_code=303)
 
 
 # --------------------------------------------------------------------------- #

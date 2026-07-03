@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active = 'equipe' %}
+{% block title %}Cora · {{ t("Equipe") }}{% endblock %}
+{% block content %}
+{% set PAPEL_LABEL = {
+  'coordenacao': t('Coordenação'), 'direcao': t('Direção'), 'secretaria': t('Secretaria'),
+  'financeiro': t('Financeiro'), 'professor': t('Professor')
+} %}
+
+<div class="hero" style="text-align:left;padding:24px 0 6px">
+  <h1 style="font-size:30px;margin:0 0 6px">{{ t("Mensagens da equipe") }}</h1>
+  <p style="color:var(--muted);margin:0;font-size:16px">{{ t("Converse com os colegas da escola.") }}</p>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;margin-top:10px">
+  {% for it in itens %}
+  <a href="/equipe/{{ it.colega.id }}" style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+     border-top:1px solid var(--line);text-decoration:none;color:inherit">
+    <div class="logo" style="width:42px;height:42px;font-size:16px">{{ it.colega.nome[0] }}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700">{{ it.colega.nome }}
+        <span class="muted small" style="font-weight:500">· {{ PAPEL_LABEL.get(it.colega.papel, it.colega.papel) }}</span></div>
+      <div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60ch">
+        {% if it.ultima %}{% if it.ultima.de_id == user.id %}{{ t("Você:") }} {% endif %}{{ it.ultima.corpo }}{% else %}{{ t("Iniciar conversa") }}{% endif %}</div>
+    </div>
+    {% if it.nao_lidas %}<span class="pill" style="background:var(--brand);color:#fff">{{ it.nao_lidas }}</span>{% endif %}
+  </a>
+  {% else %}
+  <p class="muted" style="padding:16px;margin:0">{{ t("Nenhum colega ainda.") }}</p>
+  {% endfor %}
+</div>
+{% endblock %}

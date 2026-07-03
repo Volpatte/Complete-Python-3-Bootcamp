@@ -281,3 +281,18 @@ class Cobranca(Base):
     metodo: Mapped[str] = mapped_column(String(20), default="")        # ex.: Pix
     pago_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MensagemStaff(Base):
+    """Mensagem direta entre dois funcionários (professor, coordenação…)."""
+
+    __tablename__ = "mensagens_staff"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    de_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    de_nome: Mapped[str] = mapped_column(String(120))
+    para_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    para_nome: Mapped[str] = mapped_column(String(120))
+    corpo: Mapped[str] = mapped_column(Text)
+    enviado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    lido: Mapped[bool] = mapped_column(Boolean, default=False)
