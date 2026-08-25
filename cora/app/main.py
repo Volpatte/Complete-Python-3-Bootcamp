@@ -12,7 +12,7 @@ Usuários demo (senha: cora123): coord@cora.app · prof@cora.app · familia@cora
 from __future__ import annotations
 
 import os
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -21,12 +21,12 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import ai, analytics, assistant, data, i18n, models, whatsapp
-from .db import get_db
+from .db import SessionLocal, get_db
 from .seed import init_db
 from .security import autenticar, hash_senha, senha_temporaria
 
@@ -42,6 +42,34 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 templates.env.filters["dia"] = lambda d: d.strftime("%d/%m")
 templates.env.filters["data_hora"] = lambda d: d.strftime("%d/%m %H:%M")
+
+
+def _reais(centavos: int) -> str:
+    """Formata centavos como moeda brasileira: 148000 -> 'R$ 1.480,00'."""
+    s = f"{(centavos or 0) / 100:,.2f}"  # '1,480.00'
+    return "R$ " + s.replace(",", "·").replace(".", ",").replace("·", ".")
+
+
+def _centavos(texto: str) -> int:
+    """Converte um valor digitado (R$ 1.480,00 / 1480.00 / 1.480 / 1480) em centavos."""
+    s = "".join(ch for ch in (texto or "") if ch.isdigit() or ch in ".,")
+    if "," in s and "." in s:
+        s = (s.replace(".", "").replace(",", ".") if s.rfind(",") > s.rfind(".") else s.replace(",", ""))
+    elif "," in s:
+        s = s.replace(",", ".")
+    elif "." in s:
+        # Sem vírgula: '.' é separador de milhar (não decimal) quando há mais de
+        # um ponto ou 3 dígitos após o último — ex.: "1.480" → 1480, mas "10.50" → 10,50.
+        _, _, frac = s.rpartition(".")
+        if s.count(".") > 1 or len(frac) == 3:
+            s = s.replace(".", "")
+    try:
+        return round(float(s) * 100)
+    except ValueError:
+        return 0
+
+
+templates.env.filters["reais"] = _reais
 
 # Cria as tabelas e faz o seed na carga do app (idempotente).
 init_db()
@@ -63,8 +91,12 @@ async def _handle_redirect(request: Request, exc: Redirecionar):
 def _home_do(papel: str) -> str:
     return {
         "coordenacao": "/coordenacao", "professor": "/professor", "familia": "/familia",
-        "direcao": "/admin", "secretaria": "/admin", "financeiro": "/admin",
+        "direcao": "/admin", "secretaria": "/admin", "financeiro": "/financeiro",
     }.get(papel, "/")
+
+
+# Papéis que enxergam o painel financeiro da escola.
+PAPEIS_FINANCEIRO = (models.FINANCEIRO, models.COORDENACAO, models.DIRECAO)
 
 
 def exigir(*papeis: str):
@@ -82,12 +114,58 @@ def exigir(*papeis: str):
     return dep
 
 
+def _notificacoes(db: Session, user: models.Usuario) -> list[dict]:
+    """Agrega os itens que pedem atenção do usuário (ao vivo, sem estado próprio)."""
+    itens: list[dict] = []
+    if user.papel == models.FAMILIA:
+        coms = list(db.scalars(select(models.Comunicado).where(
+            models.Comunicado.escola_id == user.escola_id,
+            or_(models.Comunicado.turma == "Toda a escola", models.Comunicado.turma == user.turma),
+        )))
+        lidos = set(db.scalars(select(models.Leitura.comunicado_id).where(
+            models.Leitura.usuario_id == user.id, models.Leitura.lido.is_(True))))
+        for c in coms:
+            if c.id not in lidos:
+                itens.append({"emoji": "📢", "titulo": c.titulo, "acao": "Comunicado não lido",
+                              "extra": "", "link": f"/familia/comunicado/{c.id}", "quando": c.enviado_em})
+        for cob in db.scalars(select(models.Cobranca).where(
+                models.Cobranca.usuario_id == user.id, models.Cobranca.status != "pago")):
+            itens.append({"emoji": "💳", "titulo": cob.descricao, "acao": "Fatura em aberto",
+                          "extra": _reais(cob.valor_centavos), "link": "/familia/financeiro",
+                          "quando": datetime.combine(cob.vencimento, time.min)})
+        for a in db.scalars(select(models.Autorizacao).where(
+                models.Autorizacao.usuario_id == user.id, models.Autorizacao.status == "pendente")):
+            itens.append({"emoji": "✅", "titulo": a.titulo, "acao": "Autorização pendente",
+                          "extra": "", "link": "/familia#autorizacoes",
+                          "quando": datetime.combine(a.data_evento, time.min)})
+    elif user.papel in models.PAPEIS_STAFF:
+        por_rem: dict[int, dict] = {}
+        for m in db.scalars(select(models.MensagemStaff).where(
+                models.MensagemStaff.para_id == user.id, models.MensagemStaff.lido.is_(False),
+        ).order_by(models.MensagemStaff.enviado_em.desc())):
+            por_rem.setdefault(m.de_id, {"emoji": "💬", "titulo": m.de_nome, "acao": "Nova mensagem",
+                                         "extra": "", "link": f"/equipe/{m.de_id}", "quando": m.enviado_em})
+        itens.extend(por_rem.values())
+    itens.sort(key=lambda x: x["quando"] or datetime.min, reverse=True)
+    return itens
+
+
+def _notif_count(user: models.Usuario | None) -> int:
+    if not user:
+        return 0
+    with SessionLocal() as db:
+        return len(_notificacoes(db, user))
+
+
 def _ctx(request: Request, user: models.Usuario | None = None, **extra) -> dict:
     lang = i18n.resolve(request)
     base = {
         "request": request, "escola": data.ESCOLA, "ai": ai, "user": user,
         "lang": lang, "t": i18n.translator(lang), "langs": i18n.LANGS,
         "is_admin": bool(user and user.papel in models.PAPEIS_ADMIN),
+        "pode_financeiro": bool(user and user.papel in PAPEIS_FINANCEIRO),
+        "is_staff": bool(user and user.papel in models.PAPEIS_STAFF),
+        "notif_count": _notif_count(user),
     }
     base.update(extra)
     return base
@@ -439,6 +517,383 @@ async def admin_importar(
     return RedirectResponse(
         f"/admin?msg=import&imp_alunos={n_alunos}&imp_familias={n_familias}&imp_erros={n_erros}",
         status_code=303,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Financeiro — painel da escola + portal da família
+# --------------------------------------------------------------------------- #
+@app.get("/financeiro", response_class=HTMLResponse)
+def financeiro_central(
+    request: Request, msg: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    hoje = data.HOJE
+    cobrancas = list(
+        db.scalars(
+            select(models.Cobranca)
+            .where(models.Cobranca.escola_id == user.escola_id)
+            .order_by(models.Cobranca.vencimento.desc())
+        )
+    )
+    recebido = sum(c.valor_centavos for c in cobrancas if c.status == "pago")
+    a_receber = sum(c.valor_centavos for c in cobrancas if c.status != "pago")
+    vencido = sum(c.valor_centavos for c in cobrancas if c.status != "pago" and c.vencimento < hoje)
+    # Histórico: pagamentos recebidos, do mais recente para o mais antigo.
+    pagamentos = sorted(
+        (c for c in cobrancas if c.status == "pago"),
+        key=lambda c: c.pago_em or datetime.min, reverse=True,
+    )
+    corte = datetime.combine(hoje - timedelta(days=30), time.min)
+    recebido_30d = sum(c.valor_centavos for c in pagamentos if (c.pago_em or datetime.min) >= corte)
+    usuarios = _usuarios_da_escola(db, user.escola_id)
+    return templates.TemplateResponse(
+        "financeiro.html",
+        _ctx(
+            request, user, active="financeiro", hoje=hoje, cobrancas=cobrancas,
+            recebido=recebido, a_receber=a_receber, vencido=vencido,
+            pagamentos=pagamentos, recebido_30d=recebido_30d,
+            familias=[u for u in usuarios if u.papel == models.FAMILIA],
+            responsaveis={u.id: u.nome for u in usuarios},
+            turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True),
+            msg=msg,
+        ),
+    )
+
+
+@app.post("/financeiro/cobranca")
+def financeiro_lancar(
+    request: Request,
+    descricao: str = Form(...), valor: str = Form(...), vencimento: str = Form(""),
+    alvo: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    descricao = descricao.strip()
+    centavos = _centavos(valor)
+    if not descricao or centavos <= 0 or not alvo:
+        return RedirectResponse("/financeiro?msg=erro", status_code=303)
+    try:
+        venc = date.fromisoformat(vencimento) if vencimento else data.HOJE
+    except ValueError:
+        venc = data.HOJE
+
+    def _lancar(uid: int, aluno_nome: str):
+        db.add(models.Cobranca(
+            escola_id=user.escola_id, usuario_id=uid, aluno_nome=aluno_nome,
+            descricao=descricao, valor_centavos=centavos, vencimento=venc, status="aberto",
+        ))
+
+    if alvo.startswith("turma:"):
+        tnome = alvo[len("turma:"):]
+        alunos = db.scalars(select(models.Aluno).where(
+            models.Aluno.escola_id == user.escola_id, models.Aluno.turma == tnome,
+            models.Aluno.ativo.is_(True), models.Aluno.responsavel_id.is_not(None),
+        ))
+        vistos: dict[int, str] = {}
+        for al in alunos:
+            vistos.setdefault(al.responsavel_id, al.nome)
+        for uid, aluno_nome in vistos.items():
+            _lancar(uid, aluno_nome)
+    elif alvo.startswith("familia:") and alvo[len("familia:"):].isdigit():
+        u = db.get(models.Usuario, int(alvo[len("familia:"):]))
+        if u and u.escola_id == user.escola_id and u.papel == models.FAMILIA:
+            _lancar(u.id, u.filho_nome)
+    db.commit()
+    return RedirectResponse("/financeiro?msg=lancado", status_code=303)
+
+
+@app.get("/familia/financeiro", response_class=HTMLResponse)
+def familia_financeiro(
+    request: Request, pago: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    cobrancas = list(
+        db.scalars(
+            select(models.Cobranca)
+            .where(models.Cobranca.usuario_id == user.id)
+            .order_by(models.Cobranca.vencimento.desc())
+        )
+    )
+    total_aberto = sum(c.valor_centavos for c in cobrancas if c.status != "pago")
+    return templates.TemplateResponse(
+        "familia_financeiro.html",
+        _ctx(
+            request, user, responsavel=_responsavel(user), hoje=data.HOJE,
+            cobrancas=cobrancas, total_aberto=total_aberto, pago=pago,
+        ),
+    )
+
+
+@app.post("/familia/financeiro/{cid}/pagar")
+def familia_pagar(
+    request: Request, cid: int, origem: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    c = db.get(models.Cobranca, cid)
+    if c and c.usuario_id == user.id and c.status != "pago":
+        c.status, c.metodo, c.pago_em = "pago", "Pix", datetime.utcnow()
+        db.commit()
+    if origem == "detalhe":  # pagou dentro da 2ª via → mostra o recibo
+        return RedirectResponse(f"/familia/financeiro/{cid}?pago=1", status_code=303)
+    return RedirectResponse("/familia/financeiro?pago=1", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Recibo e 2ª via de cobrança
+# --------------------------------------------------------------------------- #
+def _num_documento(c: models.Cobranca) -> str:
+    """Número do recibo/documento, derivado do registro (sem coluna extra)."""
+    ano = (c.pago_em or c.criado_em or datetime.utcnow()).year
+    return f"{ano}-{c.id:06d}"
+
+
+def _pix_copia_cola(c: models.Cobranca, escola_nome: str) -> str:
+    """Código Pix 'copia e cola' SIMULADO para a 2ª via.
+
+    Protótipo: tem o formato de um payload EMV e é derivado da cobrança, mas
+    termina em 'DEMO' e não corresponde a nenhuma chave real — não é pagável.
+    """
+    txid = f"CORADEMO{c.id:06d}"
+    valor = f"{c.valor_centavos / 100:.2f}"
+    nome = (escola_nome or "CORA")[:25].upper()
+    return (
+        f"00020126580014BR.GOV.BCB.PIX0136{txid}"
+        f"5204000053039865{len(valor):02d}{valor}5802BR59{len(nome):02d}{nome}"
+        "6009SAO PAULO62070503***6304DEMO"
+    )
+
+
+def _cobranca_visivel(db: Session, cid: int, user) -> models.Cobranca | None:
+    """A cobrança que este usuário pode ver: a família só a sua; o staff, as da escola."""
+    c = db.get(models.Cobranca, cid)
+    if c is None:
+        return None
+    if user.papel == models.FAMILIA:
+        return c if c.usuario_id == user.id else None
+    if user.papel in PAPEIS_FINANCEIRO and c.escola_id == user.escola_id:
+        return c
+    return None
+
+
+def _detalhe_cobranca(request: Request, db: Session, user, cid: int, voltar: str, pago: str = ""):
+    """Renderiza o recibo (se paga) ou a 2ª via (se em aberto)."""
+    c = _cobranca_visivel(db, cid, user)
+    if c is None:
+        return RedirectResponse(voltar, status_code=303)
+    escola = db.get(models.Escola, c.escola_id)
+    pagador = db.get(models.Usuario, c.usuario_id)
+    return templates.TemplateResponse(
+        "cobranca_detalhe.html",
+        _ctx(
+            request, user, cobranca=c, hoje=data.HOJE, voltar=voltar, pago=pago,
+            escola_nome=escola.nome if escola else "Cora",
+            pagador_nome=pagador.nome if pagador else "—",
+            documento=_num_documento(c),
+            pix=_pix_copia_cola(c, escola.nome if escola else "Cora"),
+            eh_familia=user.papel == models.FAMILIA,
+        ),
+    )
+
+
+@app.get("/familia/financeiro/{cid}", response_class=HTMLResponse)
+def familia_cobranca_detalhe(
+    request: Request, cid: int, pago: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    return _detalhe_cobranca(request, db, user, cid, "/familia/financeiro", pago)
+
+
+@app.get("/financeiro/cobranca/{cid}", response_class=HTMLResponse)
+def financeiro_cobranca_detalhe(
+    request: Request, cid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    return _detalhe_cobranca(request, db, user, cid, "/financeiro")
+
+
+# --------------------------------------------------------------------------- #
+# Autorizações — resposta da família + painel de solicitações do staff
+# --------------------------------------------------------------------------- #
+@app.post("/familia/autorizacao/{aid}/responder")
+def familia_autorizar(
+    request: Request, aid: int, resposta: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    a = db.get(models.Autorizacao, aid)
+    if a and a.usuario_id == user.id and resposta in ("autorizado", "recusado"):
+        a.status = resposta
+        a.respondido_em = datetime.utcnow()
+        db.commit()
+    return RedirectResponse("/familia#autorizacoes", status_code=303)
+
+
+@app.get("/autorizacoes", response_class=HTMLResponse)
+def autorizacoes_central(
+    request: Request, msg: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao")),
+):
+    todas = list(
+        db.scalars(
+            select(models.Autorizacao)
+            .where(models.Autorizacao.escola_id == user.escola_id)
+            .order_by(models.Autorizacao.data_evento)
+        )
+    )
+    grupos: dict[tuple, dict] = {}
+    for a in todas:
+        g = grupos.setdefault((a.titulo, a.data_evento), {
+            "titulo": a.titulo, "data_evento": a.data_evento, "descricao": a.descricao,
+            "total": 0, "autorizado": 0, "recusado": 0, "pendente": 0,
+        })
+        g["total"] += 1
+        g[a.status] = g.get(a.status, 0) + 1
+    return templates.TemplateResponse(
+        "autorizacoes.html",
+        _ctx(
+            request, user, active="autorizacoes",
+            grupos=sorted(grupos.values(), key=lambda g: g["data_evento"]),
+            turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True), msg=msg,
+        ),
+    )
+
+
+@app.post("/autorizacoes")
+def autorizacoes_criar(
+    request: Request,
+    titulo: str = Form(...), data_evento: str = Form(""), descricao: str = Form(""), alvo: str = Form(""),
+    db: Session = Depends(get_db), user=Depends(exigir("professor", "coordenacao")),
+):
+    titulo = titulo.strip()
+    if not titulo or not alvo:
+        return RedirectResponse("/autorizacoes?msg=erro", status_code=303)
+    try:
+        quando = date.fromisoformat(data_evento) if data_evento else data.HOJE
+    except ValueError:
+        quando = data.HOJE
+
+    def _add(uid: int):
+        db.add(models.Autorizacao(
+            escola_id=user.escola_id, usuario_id=uid, titulo=titulo,
+            data_evento=quando, descricao=descricao.strip(), status="pendente",
+        ))
+
+    if alvo == "escola":
+        for u in _usuarios_da_escola(db, user.escola_id):
+            if u.papel == models.FAMILIA:
+                _add(u.id)
+    elif alvo.startswith("turma:"):
+        tnome = alvo[len("turma:"):]
+        alunos = db.scalars(select(models.Aluno).where(
+            models.Aluno.escola_id == user.escola_id, models.Aluno.turma == tnome,
+            models.Aluno.ativo.is_(True), models.Aluno.responsavel_id.is_not(None),
+        ))
+        vistos: set[int] = set()
+        for al in alunos:
+            if al.responsavel_id not in vistos:
+                vistos.add(al.responsavel_id)
+                _add(al.responsavel_id)
+    db.commit()
+    return RedirectResponse("/autorizacoes?msg=solicitado", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Mensagens internas da equipe (staff ↔ staff)
+# --------------------------------------------------------------------------- #
+def _colegas(db: Session, escola_id: int, exceto_id: int):
+    return list(db.scalars(select(models.Usuario).where(
+        models.Usuario.escola_id == escola_id,
+        models.Usuario.papel.in_(models.PAPEIS_STAFF),
+        models.Usuario.id != exceto_id,
+        models.Usuario.ativo.is_(True),
+    ).order_by(models.Usuario.nome)))
+
+
+def _entre(user_id: int, colega_id: int):
+    """Filtro: mensagens trocadas entre dois usuários (nos dois sentidos)."""
+    return or_(
+        and_(models.MensagemStaff.de_id == user_id, models.MensagemStaff.para_id == colega_id),
+        and_(models.MensagemStaff.de_id == colega_id, models.MensagemStaff.para_id == user_id),
+    )
+
+
+@app.get("/equipe", response_class=HTMLResponse)
+def equipe_inbox(request: Request, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    itens = []
+    for c in _colegas(db, user.escola_id, user.id):
+        ultima = db.scalar(
+            select(models.MensagemStaff)
+            .where(models.MensagemStaff.escola_id == user.escola_id, _entre(user.id, c.id))
+            .order_by(models.MensagemStaff.enviado_em.desc())
+        )
+        nao_lidas = db.scalar(
+            select(func.count()).select_from(models.MensagemStaff).where(
+                models.MensagemStaff.para_id == user.id, models.MensagemStaff.de_id == c.id,
+                models.MensagemStaff.lido.is_(False),
+            )
+        ) or 0
+        itens.append({"colega": c, "ultima": ultima, "nao_lidas": nao_lidas})
+    itens.sort(key=lambda x: (x["ultima"].enviado_em if x["ultima"] else datetime.min), reverse=True)
+    return templates.TemplateResponse("equipe.html", _ctx(request, user, active="equipe", itens=itens))
+
+
+def _colega_valido(db: Session, cid: int, user) -> models.Usuario | None:
+    c = db.get(models.Usuario, cid)
+    if c and c.escola_id == user.escola_id and c.papel in models.PAPEIS_STAFF and c.id != user.id:
+        return c
+    return None
+
+
+@app.get("/equipe/{cid}", response_class=HTMLResponse)
+def equipe_conversa(request: Request, cid: int, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    colega = _colega_valido(db, cid, user)
+    if colega is None:
+        return RedirectResponse("/equipe", status_code=303)
+    mensagens = list(
+        db.scalars(
+            select(models.MensagemStaff)
+            .where(models.MensagemStaff.escola_id == user.escola_id, _entre(user.id, colega.id))
+            .order_by(models.MensagemStaff.enviado_em)
+        )
+    )
+    for m in mensagens:  # marca como lidas as recebidas
+        if m.para_id == user.id and not m.lido:
+            m.lido = True
+    db.commit()
+    return templates.TemplateResponse(
+        "equipe_conversa.html", _ctx(request, user, active="equipe", colega=colega, mensagens=mensagens),
+    )
+
+
+@app.post("/equipe/{cid}/enviar")
+def equipe_enviar(
+    request: Request, cid: int, corpo: str = Form(...),
+    db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF)),
+):
+    colega = _colega_valido(db, cid, user)
+    if colega is not None and corpo.strip():
+        db.add(models.MensagemStaff(
+            escola_id=user.escola_id, de_id=user.id, de_nome=user.nome,
+            para_id=colega.id, para_nome=colega.nome, corpo=corpo.strip(), lido=False,
+        ))
+        db.commit()
+    return RedirectResponse(f"/equipe/{cid}", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Central de notificações (agregada por usuário)
+# --------------------------------------------------------------------------- #
+@app.get("/notificacoes", response_class=HTMLResponse)
+def notificacoes_staff(request: Request, db: Session = Depends(get_db), user=Depends(exigir(*models.PAPEIS_STAFF))):
+    return templates.TemplateResponse(
+        "notificacoes.html", _ctx(request, user, active="notif", itens=_notificacoes(db, user)),
+    )
+
+
+@app.get("/familia/notificacoes", response_class=HTMLResponse)
+def notificacoes_familia(request: Request, db: Session = Depends(get_db), user=Depends(exigir("familia"))):
+    return templates.TemplateResponse(
+        "notificacoes_familia.html",
+        _ctx(request, user, responsavel=_responsavel(user), itens=_notificacoes(db, user)),
     )
 
 

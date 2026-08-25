@@ -6,7 +6,7 @@
 <header class="app-head">
   <div class="row">
     <div class="avatar">JP</div>
-    <button class="icon-btn">🔔<span class="dot"></span></button>
+    <a href="/familia/notificacoes" class="icon-btn" style="text-decoration:none;position:relative">🔔{% if notif_count %}<span style="position:absolute;top:-3px;right:-3px;background:#fff;color:#ff3d71;border-radius:999px;min-width:17px;height:17px;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 3px">{{ notif_count }}</span>{% endif %}</a>
   </div>
   <h1>{{ t("Oi,") }} {{ responsavel.nome.split(' ')[0] }} 👋</h1>
   <p class="sub">{{ responsavel.filho }} · {{ responsavel.turma }}</p>
@@ -15,6 +15,7 @@
 <div class="quick">
   <a href="/familia/saude"><div class="qi" style="background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff">🩺</div>{{ t("Saúde") }}</a>
   <a href="/familia/loja"><div class="qi">🛍️</div>{{ t("Loja") }}</a>
+  <a href="/familia/financeiro"><div class="qi">💳</div>{{ t("Financeiro") }}</a>
   <a href="/familia/mensagens"><div class="qi">💬</div>{{ t("Mensagens") }}</a>
   <a href="/familia/agenda"><div class="qi">📅</div>{{ t("Agenda") }}</a>
   <a href="#tarefas"><div class="qi">📚</div>{{ t("Tarefas") }}</a>
@@ -88,11 +89,12 @@
   {% for a in autorizacoes %}
   <div class="it">
     <div><div class="l">{{ t(a.titulo) }}</div><div class="s">{{ a.data_evento|dia }}</div></div>
-    {% if a.status=='autorizado' %}
-      <span class="tag green">{{ t("autorizado") }}</span>
-    {% else %}
-      <button class="cta soft" style="width:auto;padding:9px 16px">{{ t("Autorizar") }}</button>
-    {% endif %}
+    <form action="/familia/autorizacao/{{ a.id }}/responder" method="post" style="display:flex;gap:6px;align-items:center">
+      {% if a.status == 'autorizado' %}<span class="tag green">✅ {{ t("Autorizado") }}</span>
+      {% elif a.status == 'recusado' %}<span class="tag red">✕ {{ t("Recusado") }}</span>{% endif %}
+      {% if a.status != 'autorizado' %}<button name="resposta" value="autorizado" class="cta soft" style="width:auto;padding:8px 13px">{{ t("Autorizar") }}</button>{% endif %}
+      {% if a.status != 'recusado' %}<button name="resposta" value="recusado" style="width:auto;padding:8px 13px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer">{{ t("Recusar") }}</button>{% endif %}
+    </form>
   </div>
   {% endfor %}
 </div></div>

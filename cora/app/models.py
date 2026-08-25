@@ -141,13 +141,20 @@ class Evento(Base):
 
 
 class Autorizacao(Base):
+    """Pedido de autorização (passeio, uso de imagem…). Uma linha por família.
+
+    status: pendente | autorizado | recusado.
+    """
+
     __tablename__ = "autorizacoes"
     id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True, default=0)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
     titulo: Mapped[str] = mapped_column(String(200))
     data_evento: Mapped[date] = mapped_column(Date)
     descricao: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="pendente")
+    respondido_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Conversa(Base):
@@ -253,3 +260,39 @@ class AdministracaoMed(Base):
     observacao: Mapped[str] = mapped_column(Text, default="")
 
     medicacao: Mapped["Medicacao"] = relationship(back_populates="administracoes")
+
+
+class Cobranca(Base):
+    """Cobrança financeira (mensalidade, material, evento…) de uma família.
+
+    Valores em centavos (int) para evitar imprecisão de ponto flutuante.
+    Status: 'aberto' | 'pago'. 'vencido' é derivado (aberto + vencimento passado).
+    """
+
+    __tablename__ = "cobrancas"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)  # a família cobrada
+    aluno_nome: Mapped[str] = mapped_column(String(120), default="")
+    descricao: Mapped[str] = mapped_column(String(160))
+    valor_centavos: Mapped[int] = mapped_column(Integer)
+    vencimento: Mapped[date] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(12), default="aberto")  # aberto | pago
+    metodo: Mapped[str] = mapped_column(String(20), default="")        # ex.: Pix
+    pago_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MensagemStaff(Base):
+    """Mensagem direta entre dois funcionários (professor, coordenação…)."""
+
+    __tablename__ = "mensagens_staff"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    escola_id: Mapped[int] = mapped_column(ForeignKey("escolas.id"), index=True)
+    de_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    de_nome: Mapped[str] = mapped_column(String(120))
+    para_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    para_nome: Mapped[str] = mapped_column(String(120))
+    corpo: Mapped[str] = mapped_column(Text)
+    enviado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    lido: Mapped[bool] = mapped_column(Boolean, default=False)

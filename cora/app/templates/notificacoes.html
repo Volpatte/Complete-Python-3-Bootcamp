@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set active = 'notif' %}
+{% block title %}Cora · {{ t("Notificações") }}{% endblock %}
+{% block content %}
+
+<div class="hero" style="text-align:left;padding:24px 0 6px">
+  <h1 style="font-size:30px;margin:0 0 6px">🔔 {{ t("Notificações") }}</h1>
+  <p style="color:var(--muted);margin:0;font-size:16px">{{ t("Tudo o que precisa da sua atenção, em um só lugar.") }}</p>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;margin-top:10px">
+  {% for it in itens %}
+  <a href="{{ it.link }}" style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+     border-top:1px solid var(--line);text-decoration:none;color:inherit">
+    <div style="font-size:22px;width:34px;text-align:center">{{ it.emoji }}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700">{{ t(it.titulo) }}</div>
+      <div class="muted small">{{ t(it.acao) }}{% if it.extra %} · {{ it.extra }}{% endif %}</div>
+    </div>
+    <span class="muted small" style="white-space:nowrap">{{ it.quando|data_hora }}</span>
+  </a>
+  {% else %}
+  <div style="padding:28px;text-align:center">
+    <div style="font-size:34px">🎉</div>
+    <p class="muted" style="margin:8px 0 0">{{ t("Tudo em dia! Nenhuma notificação.") }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

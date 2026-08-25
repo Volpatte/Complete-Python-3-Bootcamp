@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active = 'equipe' %}
+{% block title %}{{ colega.nome }} · Cora{% endblock %}
+{% block content %}
+{% set PAPEL_LABEL = {
+  'coordenacao': t('Coordenação'), 'direcao': t('Direção'), 'secretaria': t('Secretaria'),
+  'financeiro': t('Financeiro'), 'professor': t('Professor')
+} %}
+
+<a href="/equipe" class="small muted">← {{ t("Mensagens da equipe") }}</a>
+<h2 style="margin:8px 0 2px">{{ colega.nome }}</h2>
+<p class="muted small">{{ PAPEL_LABEL.get(colega.papel, colega.papel) }}</p>
+
+<div class="card" style="margin-top:14px">
+  <div style="display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto">
+    {% for m in mensagens %}
+      {% set meu = m.de_id == user.id %}
+      <div style="max-width:78%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
+                  {{ 'align-self:flex-end;background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff' if meu
+                     else 'align-self:flex-start;background:#f3f4f6;color:#14112b' }}">
+        {{ m.corpo }}
+        <div style="font-size:10px;opacity:.7;margin-top:4px">{{ m.enviado_em|data_hora }}</div>
+      </div>
+    {% else %}
+      <p class="muted small">{{ t("Nenhuma mensagem ainda.") }}</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="/equipe/{{ colega.id }}/enviar" style="display:flex;gap:10px;margin-top:14px">
+    <input name="corpo" placeholder="{{ t('Escreva uma mensagem…') }}" required
+           style="flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit">
+    <button class="btn" type="submit">{{ t("Enviar") }}</button>
+  </form>
+</div>
+{% endblock %}
