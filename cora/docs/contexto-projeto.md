@@ -2,7 +2,7 @@
 
 > **Documento de transferência.** Reúne tudo que outra IA (ou pessoa) precisa para
 > continuar o desenvolvimento do Cora sem depender do histórico da conversa original.
-> Atualizado em: 2026-08-20.
+> Atualizado em: 2026-08-25 (inclui recibos, 2ª via e histórico de pagamentos).
 
 ---
 
@@ -16,7 +16,7 @@ acompanha os filhos, paga, autoriza e conversa. Tudo com **IA nativa** e **tril�
 - **Tagline:** *"Cuidamos de quem protege o nosso futuro."*
 - **Identidade visual:** gradiente coral → rosa → violeta (`#ff6a86 → #e21e79 → #8b5cf6`),
   cantos arredondados, emoji como ícones, tom acolhedor e humano.
-- **Estado:** protótipo navegável funcional com dados de exemplo (seed), 96 testes passando.
+- **Estado:** protótipo navegável funcional com dados de exemplo (seed), 105 testes passando.
 - **Repositório:** `Volpatte/Complete-Python-3-Bootcamp`, o app vive na pasta `cora/`.
   (O repo era um fork do curso de Python; o Cora foi construído dentro dele.)
 
@@ -51,11 +51,11 @@ cora/
 │   ├── db.py            # engine, SessionLocal, get_db
 │   ├── security.py      # hash de senha, sessão
 │   ├── i18n.py          # tradução PT/EN/ES
-│   ├── translations.json# 362 chaves EN/ES
+│   ├── translations.json# 384 chaves EN/ES
 │   ├── ai.py, llm.py, assistant.py, analytics.py, whatsapp.py
 │   ├── static/          # style.css, app.css, sw.js, manifest, ícones
 │   └── templates/       # 25 templates Jinja
-├── tests/               # 13 arquivos, 96 testes
+├── tests/               # 14 arquivos, 105 testes
 ├── docs/                # deploy.md, roteiro-de-teste.md, pesquisa-mercado.md, este arquivo
 ├── requirements.txt
 └── run.sh
@@ -117,7 +117,7 @@ Exibição via filtro Jinja `|reais`. Parsing de entrada via `_centavos()` que e
 
 ---
 
-## 5. Rotas (55)
+## 5. Rotas (57)
 
 ### Autenticação e comuns
 `/` (landing) · `/login` (GET/POST) · `/login/demo/{papel}` · `/logout` ·
@@ -132,6 +132,7 @@ Exibição via filtro Jinja `|reais`. Parsing de entrada via `_centavos()` que e
 | `GET/POST /familia/saude*` | ficha de saúde e medicação |
 | `GET /familia/mensagens`, `/{cid}`, `POST /{cid}/enviar` | chat com a escola |
 | `GET /familia/financeiro` · `POST /familia/financeiro/{cid}/pagar` | faturas + Pix |
+| `GET /familia/financeiro/{cid}` | recibo (se paga) ou 2ª via com Pix copia-e-cola |
 | `POST /familia/autorizacao/{aid}/responder` | autorizar/recusar |
 | `GET /familia/notificacoes` | central de notificações |
 | `GET /familia/assistente` · `POST /api/assistente` | assistente IA 24/7 |
@@ -143,7 +144,8 @@ Exibição via filtro Jinja `|reais`. Parsing de entrada via `_centavos()` que e
 | `GET /coordenacao` | staff | painel com analytics, engajamento, radar de risco |
 | `GET /professor` + `POST /professor/{tarefa,evento,preview,enviar}` | professor | comunicados com IA, tarefas, eventos |
 | `GET /admin` + `POST /admin/*` | PAPEIS_ADMIN | CRUD funcionários/alunos/turmas + importação CSV |
-| `GET/POST /financeiro`, `/financeiro/cobranca` | financeiro, coord, direção | KPIs + lançar cobrança |
+| `GET/POST /financeiro`, `/financeiro/cobranca` | financeiro, coord, direção | KPIs + lançar cobrança + histórico |
+| `GET /financeiro/cobranca/{cid}` | financeiro, coord, direção | recibo / 2ª via (visão da escola) |
 | `GET/POST /autorizacoes` | professor, coordenação | solicitar + acompanhar respostas |
 | `GET /equipe`, `/equipe/{cid}`, `POST /equipe/{cid}/enviar` | PAPEIS_STAFF | mensagens internas |
 | `GET /notificacoes` | PAPEIS_STAFF | central de notificações |
@@ -166,6 +168,10 @@ Exibição via filtro Jinja `|reais`. Parsing de entrada via `_centavos()` que e
   **família** ou **turma inteira** (broadcast, 1 por responsável, deduplicado).
 - Família: saldo em aberto + **"Pagar via Pix"** (idempotente — não repaga).
 - Status `vencido` é **derivado** da data de vencimento, não armazenado.
+- **Recibo e 2ª via**: `/familia/financeiro/{id}` (e `/financeiro/cobranca/{id}` no staff) rende um
+  documento imprimível — recibo se paga, 2ª via com **Pix copia-e-cola simulado** se em aberto.
+  Número do documento é **derivado** (`AAAA-000042`), sem coluna extra.
+- **Histórico de pagamentos** no painel da escola, com total recebido nos últimos 30 dias.
 
 ### Autorizações (`Autorizacao`)
 - Família: **Autorizar / Recusar** persistidos, com `respondido_em`; pode trocar a escolha.
@@ -216,12 +222,12 @@ Exibição via filtro Jinja `|reais`. Parsing de entrada via `_centavos()` que e
 ## 8. Testes
 
 ```bash
-cd cora && python3 -m pytest        # 96 passed
+cd cora && python3 -m pytest        # 105 passed
 ```
 
 Arquivos: `test_auth`, `test_admin`, `test_analytics`, `test_assistente`,
 `test_autorizacoes`, `test_comunicados`, `test_equipe`, `test_financeiro`,
-`test_mensagens`, `test_misc`, `test_notificacoes`, `test_saude`, `test_whatsapp`.
+`test_mensagens`, `test_misc`, `test_notificacoes`, `test_recibos`, `test_saude`, `test_whatsapp`.
 
 ---
 
@@ -281,8 +287,7 @@ Variáveis de ambiente (todas opcionais):
 
 ## 12. Backlog sugerido (próximos passos)
 
-1. **Recibos / 2ª via** e histórico de pagamentos no financeiro.
-2. **Evento + autorização juntos** — criar evento na agenda já disparando o pedido.
+1. **Evento + autorização juntos** — criar evento na agenda já disparando o pedido.
 3. **Notificações push/e-mail reais** (hoje a central é in-app).
 4. **Mesclar o PR #2** e apontar o deploy para o `master`.
 5. Relatórios exportáveis (PDF/CSV) de inadimplência e engajamento.
@@ -308,5 +313,5 @@ Variáveis de ambiente (todas opcionais):
 > anexo (`cora/docs/contexto-projeto.md`). O código está em `cora/`. Leia o documento
 > inteiro antes de agir, siga as **convenções da seção 7** (código e UI em português,
 > toda string via `t()` com tradução EN/ES, escopo por `escola_id`, dinheiro em centavos,
-> POST→303), e mantenha a suíte de testes verde (`python3 -m pytest`, hoje 96 passando).
+> POST→303), e mantenha a suíte de testes verde (`python3 -m pytest`, hoje 105 passando).
 > Desenvolva na branch `claude/agenda-edu-app-cfgzxq`. Minha próxima tarefa é: **[descreva]**.

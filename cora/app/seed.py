@@ -140,21 +140,31 @@ def _seed(db: Session) -> None:
 
     # --- Cobranças (financeiro real) ---
     MENS = 148000  # R$ 1.480,00
+    def _quando(dias_atras: int) -> datetime:
+        return datetime.combine(data.HOJE - timedelta(days=dias_atras), time(9, 30))
+
+    # (usuário, aluno, descrição, valor, vencimento, status, pago_em)
     cobrs = [
-        (familia, "Pedro Prado", "Mensalidade de maio", MENS, data.HOJE - timedelta(days=30), "pago"),
-        (familia, "Pedro Prado", "Mensalidade de junho", MENS, data.HOJE + timedelta(days=3), "aberto"),
-        (familia, "Pedro Prado", "Material didático — 2º semestre", 24000, data.HOJE - timedelta(days=5), "aberto"),
+        (familia, "Pedro Prado", "Mensalidade de maio", MENS,
+         data.HOJE - timedelta(days=30), "pago", _quando(32)),
+        (familia, "Pedro Prado", "Mensalidade de junho", MENS,
+         data.HOJE + timedelta(days=3), "aberto", None),
+        (familia, "Pedro Prado", "Material didático — 2º semestre", 24000,
+         data.HOJE - timedelta(days=5), "aberto", None),
     ]
     for idx, (u, _perfil) in enumerate(extras):
-        cobrs.append((u, u.filho_nome, "Mensalidade de junho", MENS, data.HOJE + timedelta(days=3), "aberto"))
+        # um terço das famílias já quitou a mensalidade de junho nos últimos dias
+        quitou = idx % 3 == 0
+        cobrs.append((u, u.filho_nome, "Mensalidade de junho", MENS, data.HOJE + timedelta(days=3),
+                      "pago" if quitou else "aberto", _quando(idx + 1) if quitou else None))
         if idx % 2 == 0:  # metade também com uma cobrança vencida
-            cobrs.append((u, u.filho_nome, "Material didático — 2º semestre", 24000, data.HOJE - timedelta(days=4), "aberto"))
-    for u, aluno_nome, desc, valor, venc, status in cobrs:
+            cobrs.append((u, u.filho_nome, "Material didático — 2º semestre", 24000,
+                          data.HOJE - timedelta(days=4), "aberto", None))
+    for u, aluno_nome, desc, valor, venc, status, pago_em in cobrs:
         db.add(models.Cobranca(
             escola_id=escola.id, usuario_id=u.id, aluno_nome=aluno_nome,
             descricao=desc, valor_centavos=valor, vencimento=venc, status=status,
-            metodo="Pix" if status == "pago" else "",
-            pago_em=datetime.combine(venc - timedelta(days=2), time(10, 0)) if status == "pago" else None,
+            metodo="Pix" if status == "pago" else "", pago_em=pago_em,
         ))
 
     # Broadcast do "Passeio ao Jardim Botânico" para as famílias do 5º Ano A

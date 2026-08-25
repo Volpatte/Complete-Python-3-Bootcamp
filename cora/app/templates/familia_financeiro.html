@@ -33,12 +33,16 @@
         <div style="font-weight:800;font-size:16px;white-space:nowrap">{{ c.valor_centavos|reais }}</div>
       </div>
       {% if eff == 'pago' %}
-        <span class="tag green" style="margin-top:10px">✅ {{ t("Pago") }} · {{ c.metodo }}</span>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+          <span class="tag green">✅ {{ t("Pago") }} · {{ c.metodo }}</span>
+          <a href="/familia/financeiro/{{ c.id }}" style="font-weight:700;font-size:13px;color:var(--brand)">🧾 {{ t("Ver recibo") }}</a>
+        </div>
       {% else %}
         {% if eff == 'vencido' %}<span class="tag red" style="margin-top:10px">⏰ {{ t("Vencido") }}</span>{% endif %}
         <form action="/familia/financeiro/{{ c.id }}/pagar" method="post" style="margin-top:10px">
           <button class="cta" type="submit">{{ t("Pagar via Pix") }}</button>
         </form>
+        <a href="/familia/financeiro/{{ c.id }}" style="display:inline-block;margin-top:8px;font-weight:700;font-size:13px;color:var(--brand)">📄 {{ t("2ª via") }}</a>
       {% endif %}
     </div>
   {% else %}

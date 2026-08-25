@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ t("Recibo") if cobranca.status == 'pago' else t("2ª via") }} · Cora</title>
+{% set eff = 'pago' if cobranca.status == 'pago' else ('vencido' if cobranca.vencimento < hoje else 'aberto') %}
+<style>
+  :root{--brand:#e21e79;--ink:#14112b;--muted:#6b6480;--line:#ececf2;--bg:#f7f5f9}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:24px 18px 60px}
+  .doc{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 12px 40px rgba(20,17,43,.08)}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:20px 24px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#ff3d71,#ff7a59);
+    color:#fff;display:grid;place-items:center;font-size:14px}
+  .escola{text-align:right;font-size:13px;color:var(--muted)}
+  .banner{padding:18px 24px;display:flex;align-items:center;gap:12px;font-weight:800;font-size:17px}
+  .banner.pago{background:#ecfdf5;color:#047857}
+  .banner.aberto{background:#fffbeb;color:#b45309}
+  .banner.vencido{background:#fef2f2;color:#dc2626}
+  .valor{padding:22px 24px;border-bottom:1px solid var(--line)}
+  .valor .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .valor .v{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  dl{margin:0;padding:8px 24px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px 20px}
+  dl>div{min-width:0}
+  dt{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px}
+  dd{margin:0;font-weight:600;font-size:15px;overflow-wrap:anywhere}
+  .pix{margin:0 24px 24px;border:1px dashed var(--line);border-radius:14px;padding:16px;background:#fafafd}
+  .pix h3{margin:0 0 4px;font-size:14px;font-weight:800}
+  .pix .obs{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+    overflow-wrap:anywhere;user-select:all}
+  .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button,.lnk{font:inherit;font-weight:700;font-size:14px;border-radius:11px;padding:11px 18px;
+    border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px}
+  button.primary{background:linear-gradient(135deg,#ff3d71,#ff7a59);color:#fff;border:0;
+    box-shadow:0 8px 20px rgba(226,30,121,.3)}
+  button:hover,.lnk:hover{filter:brightness(.97)}
+  button:focus-visible,.lnk:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .rodape{padding:16px 24px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+  .barra{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  @media print{
+    body{background:#fff}
+    .wrap{padding:0;max-width:none}
+    .doc{border:0;box-shadow:none;border-radius:0}
+    .barra,.pix .acts{display:none}
+  }
+  @media(max-width:520px){dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  {% if pago %}
+  <div class="doc" style="margin-bottom:14px;border-color:#a7f3d0">
+    <div class="banner pago">✅ {{ t("Pagamento confirmado via Pix!") }}</div>
+  </div>
+  {% endif %}
+
+  <div class="doc">
+    <div class="head">
+      <div class="brand"><span class="logo">♥</span> Cora</div>
+      <div class="escola">{{ escola_nome }}</div>
+    </div>
+
+    <div class="banner {{ eff }}">
+      {% if eff == 'pago' %}🧾 {{ t("Recibo de pagamento") }}
+      {% elif eff == 'vencido' %}⏰ {{ t("2ª via — cobrança vencida") }}
+      {% else %}📄 {{ t("2ª via — cobrança em aberto") }}{% endif %}
+    </div>
+
+    <div class="valor">
+      <div class="lab">{{ t("Valor") }}</div>
+      <div class="v">{{ cobranca.valor_centavos|reais }}</div>
+    </div>
+
+    <dl>
+      <div><dt>{{ t("Documento") }}</dt><dd>Nº {{ documento }}</dd></div>
+      <div><dt>{{ t("Descrição") }}</dt><dd>{{ t(cobranca.descricao) }}</dd></div>
+      <div><dt>{{ t("Pagador") }}</dt><dd>{{ pagador_nome }}</dd></div>
+      <div><dt>{{ t("Aluno") }}</dt><dd>{{ cobranca.aluno_nome or "—" }}</dd></div>
+      <div><dt>{{ t("Vencimento") }}</dt><dd>{{ cobranca.vencimento|dia }}</dd></div>
+      {% if eff == 'pago' %}
+        <div><dt>{{ t("Pago em") }}</dt><dd>{{ cobranca.pago_em|data_hora if cobranca.pago_em else "—" }}</dd></div>
+        <div><dt>{{ t("Forma de pagamento") }}</dt><dd>{{ cobranca.metodo or "Pix" }}</dd></div>
+      {% else %}
+        <div><dt>{{ t("Status") }}</dt>
+          <dd>{{ t("Vencido") if eff == 'vencido' else t("Em aberto") }}</dd></div>
+      {% endif %}
+    </dl>
+
+    {% if eff != 'pago' %}
+    <div class="pix">
+      <h3>{{ t("Pix copia e cola") }}</h3>
+      <p class="obs">{{ t("Código de demonstração deste protótipo — não é uma cobrança real.") }}</p>
+      <div class="code" id="pix">{{ pix }}</div>
+      <div class="acts">
+        <button type="button" onclick="copiar()">📋 <span id="cp">{{ t("Copiar código") }}</span></button>
+        {% if eh_familia %}
+        <form action="/familia/financeiro/{{ cobranca.id }}/pagar" method="post" style="margin:0">
+          <input type="hidden" name="origem" value="detalhe">
+          <button class="primary" type="submit">{{ t("Pagar via Pix") }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="rodape">
+      {% if eff == 'pago' %}{{ t("Documento gerado eletronicamente pelo Cora.") }}
+      {% else %}{{ t("Após o pagamento, o recibo fica disponível nesta mesma página.") }}{% endif %}
+    </div>
+  </div>
+
+  <div class="barra">
+    <a class="lnk" href="{{ voltar }}">‹ {{ t("Voltar") }}</a>
+    <button type="button" onclick="window.print()">🖨️ {{ t("Imprimir") }}</button>
+  </div>
+</div>
+
+<script>
+  function copiar(){
+    var txt=document.getElementById('pix').textContent, alvo=document.getElementById('cp');
+    var ok=function(){alvo.textContent='{{ t("Copiado!") }}';setTimeout(function(){alvo.textContent='{{ t("Copiar código") }}'},1800)};
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,sel);}
+      else{sel();}
+    }catch(e){sel();}
+    function sel(){
+      var r=document.createRange();r.selectNodeContents(document.getElementById('pix'));
+      var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+      try{document.execCommand('copy');ok();}catch(e){}
+    }
+  }
+</script>
+</body>
+</html>

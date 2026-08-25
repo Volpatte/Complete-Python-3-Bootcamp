@@ -12,7 +12,7 @@ Usuários demo (senha: cora123): coord@cora.app · prof@cora.app · familia@cora
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -539,12 +539,20 @@ def financeiro_central(
     recebido = sum(c.valor_centavos for c in cobrancas if c.status == "pago")
     a_receber = sum(c.valor_centavos for c in cobrancas if c.status != "pago")
     vencido = sum(c.valor_centavos for c in cobrancas if c.status != "pago" and c.vencimento < hoje)
+    # Histórico: pagamentos recebidos, do mais recente para o mais antigo.
+    pagamentos = sorted(
+        (c for c in cobrancas if c.status == "pago"),
+        key=lambda c: c.pago_em or datetime.min, reverse=True,
+    )
+    corte = datetime.combine(hoje - timedelta(days=30), time.min)
+    recebido_30d = sum(c.valor_centavos for c in pagamentos if (c.pago_em or datetime.min) >= corte)
     usuarios = _usuarios_da_escola(db, user.escola_id)
     return templates.TemplateResponse(
         "financeiro.html",
         _ctx(
             request, user, active="financeiro", hoje=hoje, cobrancas=cobrancas,
             recebido=recebido, a_receber=a_receber, vencido=vencido,
+            pagamentos=pagamentos, recebido_30d=recebido_30d,
             familias=[u for u in usuarios if u.papel == models.FAMILIA],
             responsaveis={u.id: u.nome for u in usuarios},
             turmas=_turmas_da_escola(db, user.escola_id, apenas_ativas=True),
@@ -618,14 +626,89 @@ def familia_financeiro(
 
 @app.post("/familia/financeiro/{cid}/pagar")
 def familia_pagar(
-    request: Request, cid: int,
+    request: Request, cid: int, origem: str = Form(""),
     db: Session = Depends(get_db), user=Depends(exigir("familia")),
 ):
     c = db.get(models.Cobranca, cid)
     if c and c.usuario_id == user.id and c.status != "pago":
         c.status, c.metodo, c.pago_em = "pago", "Pix", datetime.utcnow()
         db.commit()
+    if origem == "detalhe":  # pagou dentro da 2ª via → mostra o recibo
+        return RedirectResponse(f"/familia/financeiro/{cid}?pago=1", status_code=303)
     return RedirectResponse("/familia/financeiro?pago=1", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Recibo e 2ª via de cobrança
+# --------------------------------------------------------------------------- #
+def _num_documento(c: models.Cobranca) -> str:
+    """Número do recibo/documento, derivado do registro (sem coluna extra)."""
+    ano = (c.pago_em or c.criado_em or datetime.utcnow()).year
+    return f"{ano}-{c.id:06d}"
+
+
+def _pix_copia_cola(c: models.Cobranca, escola_nome: str) -> str:
+    """Código Pix 'copia e cola' SIMULADO para a 2ª via.
+
+    Protótipo: tem o formato de um payload EMV e é derivado da cobrança, mas
+    termina em 'DEMO' e não corresponde a nenhuma chave real — não é pagável.
+    """
+    txid = f"CORADEMO{c.id:06d}"
+    valor = f"{c.valor_centavos / 100:.2f}"
+    nome = (escola_nome or "CORA")[:25].upper()
+    return (
+        f"00020126580014BR.GOV.BCB.PIX0136{txid}"
+        f"5204000053039865{len(valor):02d}{valor}5802BR59{len(nome):02d}{nome}"
+        "6009SAO PAULO62070503***6304DEMO"
+    )
+
+
+def _cobranca_visivel(db: Session, cid: int, user) -> models.Cobranca | None:
+    """A cobrança que este usuário pode ver: a família só a sua; o staff, as da escola."""
+    c = db.get(models.Cobranca, cid)
+    if c is None:
+        return None
+    if user.papel == models.FAMILIA:
+        return c if c.usuario_id == user.id else None
+    if user.papel in PAPEIS_FINANCEIRO and c.escola_id == user.escola_id:
+        return c
+    return None
+
+
+def _detalhe_cobranca(request: Request, db: Session, user, cid: int, voltar: str, pago: str = ""):
+    """Renderiza o recibo (se paga) ou a 2ª via (se em aberto)."""
+    c = _cobranca_visivel(db, cid, user)
+    if c is None:
+        return RedirectResponse(voltar, status_code=303)
+    escola = db.get(models.Escola, c.escola_id)
+    pagador = db.get(models.Usuario, c.usuario_id)
+    return templates.TemplateResponse(
+        "cobranca_detalhe.html",
+        _ctx(
+            request, user, cobranca=c, hoje=data.HOJE, voltar=voltar, pago=pago,
+            escola_nome=escola.nome if escola else "Cora",
+            pagador_nome=pagador.nome if pagador else "—",
+            documento=_num_documento(c),
+            pix=_pix_copia_cola(c, escola.nome if escola else "Cora"),
+            eh_familia=user.papel == models.FAMILIA,
+        ),
+    )
+
+
+@app.get("/familia/financeiro/{cid}", response_class=HTMLResponse)
+def familia_cobranca_detalhe(
+    request: Request, cid: int, pago: str = "",
+    db: Session = Depends(get_db), user=Depends(exigir("familia")),
+):
+    return _detalhe_cobranca(request, db, user, cid, "/familia/financeiro", pago)
+
+
+@app.get("/financeiro/cobranca/{cid}", response_class=HTMLResponse)
+def financeiro_cobranca_detalhe(
+    request: Request, cid: int,
+    db: Session = Depends(get_db), user=Depends(exigir(*PAPEIS_FINANCEIRO)),
+):
+    return _detalhe_cobranca(request, db, user, cid, "/financeiro")
 
 
 # --------------------------------------------------------------------------- #

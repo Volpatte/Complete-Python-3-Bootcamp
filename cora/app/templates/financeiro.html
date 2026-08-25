@@ -65,6 +65,7 @@
       <th style="padding:12px 16px">{{ t("Valor") }}</th>
       <th style="padding:12px 16px">{{ t("Vencimento") }}</th>
       <th style="padding:12px 16px">{{ t("Status") }}</th>
+      <th style="padding:12px 16px"></th>
     </tr></thead>
     <tbody>
     {% for c in cobrancas %}
@@ -79,9 +80,46 @@
           {% elif eff == 'vencido' %}<span class="pill red">● {{ t("Vencido") }}</span>
           {% else %}<span class="pill amber">● {{ t("Em aberto") }}</span>{% endif %}
         </td>
+        <td style="padding:12px 16px;text-align:right;white-space:nowrap">
+          <a href="/financeiro/cobranca/{{ c.id }}" style="font-weight:700;font-size:13px;color:var(--brand)">
+            {% if eff == 'pago' %}🧾 {{ t("Recibo") }}{% else %}📄 {{ t("2ª via") }}{% endif %}</a>
+        </td>
       </tr>
     {% else %}
-      <tr><td colspan="5" style="padding:16px;color:var(--muted)">{{ t("Nenhuma cobrança ainda.") }}</td></tr>
+      <tr><td colspan="6" style="padding:16px;color:var(--muted)">{{ t("Nenhuma cobrança ainda.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ---- histórico de pagamentos ---- #}
+<p class="section-title">{{ t("Histórico de pagamentos") }} · {{ pagamentos|length }}
+  <span class="muted small" style="font-weight:500;text-transform:none;letter-spacing:0">
+    — {{ t("últimos 30 dias") }}: <b>{{ recebido_30d|reais }}</b></span></p>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase">
+      <th style="padding:12px 16px">{{ t("Pago em") }}</th>
+      <th style="padding:12px 16px">{{ t("Família") }}</th>
+      <th style="padding:12px 16px">{{ t("Descrição") }}</th>
+      <th style="padding:12px 16px">{{ t("Forma de pagamento") }}</th>
+      <th style="padding:12px 16px">{{ t("Valor") }}</th>
+      <th style="padding:12px 16px"></th>
+    </tr></thead>
+    <tbody>
+    {% for c in pagamentos %}
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:12px 16px;white-space:nowrap">{{ c.pago_em|data_hora if c.pago_em else "—" }}</td>
+        <td style="padding:12px 16px">{{ responsaveis.get(c.usuario_id, '—') }}</td>
+        <td style="padding:12px 16px">{{ t(c.descricao) }}</td>
+        <td style="padding:12px 16px">{{ c.metodo or "Pix" }}</td>
+        <td style="padding:12px 16px;font-weight:700">{{ c.valor_centavos|reais }}</td>
+        <td style="padding:12px 16px;text-align:right;white-space:nowrap">
+          <a href="/financeiro/cobranca/{{ c.id }}" style="font-weight:700;font-size:13px;color:var(--brand)">🧾 {{ t("Recibo") }}</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" style="padding:16px;color:var(--muted)">{{ t("Nenhum pagamento recebido ainda.") }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
